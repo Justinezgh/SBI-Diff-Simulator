@@ -1,7 +1,7 @@
 from numpyro.handlers import seed, trace, condition
 import jax
 
-def samples_and_scores(model, key, batch_size=64, score_type='density'):
+def get_samples_and_scores(model, key, batch_size=64, score_type='density'):
     """
     Handling function sampling and computing the score from the model.
 
