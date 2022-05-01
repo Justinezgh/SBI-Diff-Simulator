@@ -1,4 +1,3 @@
-from os import seteuid
 import jax
 from jax import lax
 import jax.numpy as jnp
