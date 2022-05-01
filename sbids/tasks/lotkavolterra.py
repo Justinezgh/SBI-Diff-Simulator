@@ -1,3 +1,4 @@
+from os import seteuid
 import jax
 from jax import lax
 import jax.numpy as jnp
@@ -9,9 +10,17 @@ tfb = tfp.bijectors
 
 class Lotka_Volterra:
 
-    def __init__(self,
-                num_seed:int=None):
-        self.num_seed = num_seed
+    def __init__(self,time=10,nb_statistics=10):
+        """Lotka Voleterra 
+        Parameters
+        ----------
+        time: Number of measurement times.
+        nb_statistics: Number of statistics for the observation vector. It must be divisible by 2.
+        """
+        self.time = time
+        self.nb_statistics = nb_statistics
+
+
 
         def equation(y,t, theta):
             """
@@ -42,40 +51,23 @@ class Lotka_Volterra:
             dY_dt = -gamma * Y + delta * X * Y
             return jnp.stack([dX_dt, dY_dt],axis=0)
         self.equation = equation
-    
+
         @jax.jit
         def solve_equation(init,theta):
-          
-            ts = jnp.arange(0.,10.,0.1)
-            z = odeint(equation, init, ts, theta, rtol=1e-9, atol=1e-9)
-            z = z.T[:,::21]
+            nb_statistics = self.nb_statistics / 2 
+            step = self.time / nb_statistics
+            ts = jnp.arange(0.,time, step)
+            z = odeint(equation, init, ts, theta, rtol=1e-6, atol=1e-5)
+            z = z.T
 
             return z
         self.solve_equation = solve_equation
 
 
-    def get_truth(self):
+    def simulator(self, seed, batch_size=100, which_score=0):
         """
-        Return observed data and the parameters and latent variables that generated this observation.
-        """
-        prior_parameters = tfd.Independent(tfd.LogNormal(jnp.array([-0.125,-3,-0.125,-3]), 0.5*jnp.ones(4)),1)
-        prior_latent_variables = tfd.Independent(tfd.LogNormal(jnp.log(jnp.ones(2)*3), 0.5*jnp.ones(2)),1)
-
-        thetas = prior_parameters.sample(1,seed=jax.random.PRNGKey(self.num_seed))
-        latent_variables = prior_latent_variables.sample(1, seed = jax.random.PRNGKey(self.num_seed))
-
-        z = self.solve_equation(latent_variables.reshape(2,),thetas).reshape(1, -1)
-
-        likelihood = tfd.Independent(tfd.LogNormal(jnp.log(z),0.1),1)
-        observations = likelihood.sample(1,seed=jax.random.PRNGKey(self.num_seed))
-
-        return thetas, latent_variables, observations
-
-
-
-    def simulator(self,batch_size=100, which_score=0):
-        """
-        Generate dataset (theta, observation, score) with stochastic initial conditions sampled from LogNormal(log(10),0.8).
+        Generate dataset (theta, observation, score) with stochastic initial 
+        conditions sampled from LogNormal(log(10),0.8).
         Parameters
         ----------
         key: PRNGKeyArray
@@ -92,20 +84,22 @@ class Lotka_Volterra:
             'Score': the joint score.
         """
 
-        key1, key2, key3 = jax.random.split(jax.random.PRNGKey(int(self.num_seed + 2)),3)
+        key1, key2, key3, key4 = jax.random.split(seed,4)
 
-        prior = tfd.Independent(tfd.LogNormal(jnp.array([-0.125,-3,-0.125,-3]), 0.5*jnp.ones(4)),1)
-        theta = prior.sample(batch_size, key1)
-        init = tfd.LogNormal(jnp.log(10*jnp.ones(2)), 0.8*jnp.ones(2)).sample(batch_size, key2)
+        prior_parameters = tfd.Independent(tfd.LogNormal(jnp.array([-0.125,-3,-0.125,-3]), 0.5*jnp.ones(4)),1)
+        prior_latent_variable = tfd.LogNormal(jnp.log(10*jnp.ones(2)), 0.8*jnp.ones(2))
 
-        def get_log_prob(theta,init,key):
+        theta = prior_parameters.sample(batch_size, key1)
+        latent_variable = prior_latent_variable.sample(batch_size, key2)
 
-          z = self.solve_equation(init,theta).reshape(1, -1)
+        def get_log_prob(theta,latent_variable,seed):
+
+          z = self.solve_equation(latent_variable,theta).reshape(1, -1)
 
           prior = tfd.Independent(tfd.LogNormal(jnp.array([-0.125,-3,-0.125,-3]), 0.5*jnp.ones(4)),1) 
           likelihood = tfd.Independent(tfd.LogNormal(jnp.log(z),0.1),1)
 
-          proportion = likelihood.sample(seed=key)
+          proportion = likelihood.sample(seed=seed)
           posterior = likelihood.log_prob(jax.lax.stop_gradient(proportion))
 
           if which_score==0:
@@ -113,18 +107,32 @@ class Lotka_Volterra:
 
           return posterior.reshape(), proportion    
 
-        score, x = jax.vmap(jax.grad(lambda p, z, key : get_log_prob(p.reshape(4,), z.reshape(2,), key), has_aux=True))(theta, init, jax.random.split(jax.random.PRNGKey(int(self.num_seed + 4)),batch_size))
+        score, x = jax.vmap(jax.grad(lambda p, z, key : get_log_prob(p.reshape(4,), 
+                                                                     z.reshape(2,), 
+                                                                     key), 
+                                     has_aux=True))(theta, 
+                                                    latent_variable, 
+                                                    jax.random.split(key4,batch_size))
         x = x.reshape(batch_size,-1)
 
         return theta, x, score
 
 
 
-    def get_reference_posterior(self,batch_size=10000):
+    def get_truth(self, seed):
+        """
+        Return observed data and the parameters and latent variables that generated this observation.
+        """
+        thetas, observations, _ = self.simulator(seed,batch_size=1, which_score=0)
+        return thetas, observations
+
+
+
+    def get_reference_posterior(self, seed, batch_size=10000):
         """
         Return the reference posterior for a given observation.
         """
-        _, _, observation = self.get_truth()
+        _, observation = self.get_truth(seed)
 
         @jax.jit
         def get_log_prob_mcmc(x,observation):
@@ -155,8 +163,10 @@ class Lotka_Volterra:
             num_leapfrog_steps=3,
             step_size=5e-3)
         
+        key1, key2 = jax.random.split(seed,2) 
+
         # To run 100 chains in parallel
-        init_state = 0.1*jax.random.normal(jax.random.PRNGKey(self.num_seed), [100, 6])
+        init_state = 0.1*jax.random.normal(key1, [100, 6])
 
         @jax.jit
         def run_chain():
@@ -166,7 +176,7 @@ class Lotka_Volterra:
                 current_state=init_state,
                 kernel=adaptive_hmc,
                 trace_fn=lambda _, pkr: pkr.is_accepted,
-                seed=jax.random.PRNGKey(self.num_seed))
+                seed=key2)
             return samples,is_accepted
   
         samples_hmc,is_accepted = run_chain() 
@@ -175,4 +185,4 @@ class Lotka_Volterra:
         step = size // batch_size
         sample = samples_hmc[is_accepted][::step]
 
-        return tfb.Softplus()(sample)
+        return tfb.Softplus()(sample[...,:4])
