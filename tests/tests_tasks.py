@@ -1,6 +1,6 @@
 import pytest
 import sbibm
-from sbids.tasks import lotkavolterra
+from sbids.tasks import lotka_volterra
 import numpyro
 
 import jax
@@ -15,7 +15,7 @@ def test_lotkavolterra():
     # Reference sample from the forward model SBIBM
     d0 = jnp.array(task.get_observation(num_observation=1).reshape([2, 10]).T)
 
-    model = numpyro.handlers.condition(lotkavolterra, 
+    model = numpyro.handlers.condition(lotka_volterra, 
                     {'z':jnp.array([30.0, 1.0]), 
                      'theta':jnp.array([0.6859, 0.1076, 0.8879, 0.1168])})
 

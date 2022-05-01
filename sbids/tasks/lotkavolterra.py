@@ -4,7 +4,7 @@ from jax.random import PRNGKey
 import numpyro
 import numpyro.distributions as dist
 
-__all__=["loktavolterra"]
+__all__=["lokta_volterra"]
 
 def _dz_dt(z, t, theta):
     """
@@ -25,7 +25,7 @@ def _dz_dt(z, t, theta):
     return jnp.stack([du_dt, dv_dt])
 
 
-def loktavolterra(y=None, ts=jnp.linspace(0,18.9,10)):
+def lokta_volterra(y=None, ts=jnp.linspace(0,18.9,10)):
     """
     Probabilistic model for the Lotka–Volterra system.
     :param int N: number of measurement times
