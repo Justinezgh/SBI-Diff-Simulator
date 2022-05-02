@@ -4,6 +4,7 @@ xfail = pytest.mark.xfail
 
 import jax
 import jax.numpy as jnp
+import haiku as hk
 
 import tensorflow_probability as tfp; tfp = tfp.substrates.jax
 tfd = tfp.distributions
@@ -11,7 +12,7 @@ tfd = tfp.distributions
 import numpy as np
 from numpy.testing import assert_allclose, assert_equal
 
-from sbids.metrics import c2st
+from sbids.metrics.c2st import c2st
 
 # distributions
 dist1 = tfd.MultivariateNormalDiag(loc=[3,4,5,6],scale_diag=[4,2,1,2])
@@ -44,6 +45,7 @@ sample51 = dist5.sample(10000,jax.random.PRNGKey(51))
 sample52 = dist5.sample(10000,jax.random.PRNGKey(52))
 
 
+inds = np.random.randint(0, 1000, 3)  
 
 _test_params_same_dist = [[sample11,sample12],
                           [sample31,sample32],
@@ -52,20 +54,19 @@ _test_params_same_dist = [[sample11,sample12],
 
 def test_c2st__s1_s2_are_from_the_same_dist():
     """Test if two samples from the same distribution return 0.5 accuracy."""
-    for params in _test_params_same_dist:
-        inds = np.random.randint(0, 1000, 1)   
-        _,t = c2st(params[0],params[1],int(inds))
+    for params in _test_params_same_dist: 
+        _,t = c2st(params[0],params[1],hk.PRNGSequence(inds[0]))
         assert_allclose(t, 0.5, rtol=0.01, atol=0.01)
 
 
 _test_params = [[sample11,sample21,sample61],
                 [sample11,sample71,sample61],]
 
+
 def test_c2st__():
     """Test if the accuracy when sample1 is 'close' to sample2 is smaller than
     when sample1 is 'far' from sample2."""
     for params in _test_params:
-          inds = np.random.randint(0, 1000, 1) 
-          _,t_not_far = c2st(params[0],params[1],int(inds+2000))
-          _,t_far = c2st(params[0],params[2],int(inds))
+          _,t_not_far = c2st(params[0],params[1],hk.PRNGSequence(inds[1]))
+          _,t_far = c2st(params[0],params[2],hk.PRNGSequence(inds[2]))
           assert_equal(bool(t_not_far < t_far), True)
