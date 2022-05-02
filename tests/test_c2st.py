@@ -45,8 +45,6 @@ sample51 = dist5.sample(10000,jax.random.PRNGKey(51))
 sample52 = dist5.sample(10000,jax.random.PRNGKey(52))
 
 
-inds = np.random.randint(0, 1000, 3)  
-
 _test_params_same_dist = [[sample11,sample12],
                           [sample31,sample32],
                           [sample41,sample42],
@@ -55,7 +53,7 @@ _test_params_same_dist = [[sample11,sample12],
 def test_c2st__s1_s2_are_from_the_same_dist():
     """Test if two samples from the same distribution return 0.5 accuracy."""
     for params in _test_params_same_dist: 
-        _,t = c2st(params[0],params[1],hk.PRNGSequence(inds[0]))
+        _,t = c2st(params[0],params[1],hk.PRNGSequence(0))
         assert_allclose(t, 0.5, rtol=0.01, atol=0.01)
 
 
@@ -67,6 +65,6 @@ def test_c2st__():
     """Test if the accuracy when sample1 is 'close' to sample2 is smaller than
     when sample1 is 'far' from sample2."""
     for params in _test_params:
-          _,t_not_far = c2st(params[0],params[1],hk.PRNGSequence(inds[1]))
-          _,t_far = c2st(params[0],params[2],hk.PRNGSequence(inds[2]))
+          _,t_not_far = c2st(params[0],params[1],hk.PRNGSequence(1))
+          _,t_far = c2st(params[0],params[2],hk.PRNGSequence(2))
           assert_equal(bool(t_not_far < t_far), True)
