@@ -2,7 +2,7 @@ import jax.numpy as jnp
 import jax
 import haiku as hk
 
-import tensorflow_probability as tfp; tf = tfp.experimental.substrates.jax
+import tensorflow_probability as tfp; tfp = tfp.experimental.substrates.jax
 tfb = tfp.bijectors
 tfd = tfp.distributions
 
@@ -62,13 +62,13 @@ class ConditionalRealNVP(hk.Module):
     self.bijector_fn = bijector_fn
     super(ConditionalRealNVP, self).__init__(*args, **kwargs)
     
-    def __call__(self, y):
-      chain = tfb.Chain([
-            tfb.Permute(jnp.arange(d)[::-1])(tfb.RealNVP(2, bijector_fn=self.bijector_fn(y, name = 'b1'))) for i in range(self.n_layer)
-        ])
-      
-      nvp = tfd.TransformedDistribution(
-           tfd.MultivariateNormalDiag(0.5*jnp.ones(d), scale_identity_multiplier=0.05),
-            bijector=chain)
-      
-      return nvp
+  def __call__(self, y):
+    chain = tfb.Chain([
+          tfb.Permute(jnp.arange(self.d)[::-1])(tfb.RealNVP(2, bijector_fn=self.bijector_fn(y, name = 'b%d'%i))) for i in range(self.n_layer)
+      ])
+    
+    nvp = tfd.TransformedDistribution(
+          tfd.MultivariateNormalDiag(0.5*jnp.ones(self.d), scale_identity_multiplier=0.05),
+          bijector=chain)
+    
+    return nvp
