@@ -16,9 +16,6 @@ import tensorflow_probability as tfp; tfp = tfp.experimental.substrates.jax
 tfb = tfp.bijectors
 tfd = tfp.distributions
 
-import arviz as az
-import matplotlib.pyplot as plt
-from chainconsumer import ChainConsumer
 from tqdm import tqdm
 
 from sbids.metrics.c2st import c2st
@@ -28,10 +25,7 @@ from sbids.bijectors.bijectors import MixtureAffineSigmoidBijector
 #!pip install git+https://github.com/Justinezgh/SBI-Diff-Simulator.git@u/EiffL/Infra
 #!pip install chainconsumer
 
-az.style.use("arviz-darkgrid")
-
 import argparse
-
 parser = argparse.ArgumentParser()
 parser.add_argument("--batch_size", type=int, default=1000)
 parser.add_argument("--n_simulations", type=int, default=5e5)
@@ -177,11 +171,6 @@ class ConditionalRealNVP(hk.Module):
     )
     return nvp
 
-
-# for n_layers in range(2,3,4,5)
-#  for nb_components in range(32,64,128):
-#    for layers in [[128,128],[128,128,128],[128,128,128,128]]:
-
 bijector = partial(AffineSigmoidCoupling, layers=args.layers, n_components=args.n_components, activation=jax.nn.silu)
 NF = partial(ConditionalRealNVP, n_layers=args.n_layers, bijector_fn=bijector)
 
@@ -249,22 +238,39 @@ sample_nd = nvp_sample_nd.apply(
 predicted_samples = transformation_params.forward(sample_nd)
 jnp.save('./outputs/predicted_samples.npy', predicted_samples)
 
-plt.plot(batch_loss)
-plt.title("Batch loss")
-plt.xlabel("Batches")
-plt.ylabel("Loss")
-plt.savefig('./outputs/loss.png')
-
-parameters = [r'$\alpha$', r'$\beta$', r'$\gamma$', r'$\delta$']
 true_posterior_samples = jnp.load('posterior_z_fixedkey0-4.npy')
-c = ChainConsumer()
-c.add_chain(predicted_samples, parameters=parameters, name="prediction")
-c.add_chain(true_posterior_samples, parameters=parameters, name="truth")
-fig = c.plotter.plot(filename="./outputs/contour_plot.png", figsize=[10,10], truth=[0.603503  , 0.03026864, 1.6093055 , 0.01722082])
+
+# METRICS
+
+c2st_metric = c2st(true_posterior_samples, predicted_samples, seed=0, n_folds=5)
+print(c2st_metric)
+
+
+# PLOTS
+
+DO_PLOTS = True
+try:
+  import arviz as az
+  import matplotlib.pyplot as plt
+  from chainconsumer import ChainConsumer
+except ImportError:
+  DO_PLOTS = False
+
+if DO_PLOTS:
+  az.style.use("arviz-darkgrid")
+
+  plt.plot(batch_loss)
+  plt.title("Batch loss")
+  plt.xlabel("Batches")
+  plt.ylabel("Loss")
+  plt.savefig('./outputs/loss.png')
+  
+  parameters = [r'$\alpha$', r'$\beta$', r'$\gamma$', r'$\delta$']
+
+  c = ChainConsumer()
+  c.add_chain(predicted_samples, parameters=parameters, name="prediction")
+  c.add_chain(true_posterior_samples, parameters=parameters, name="truth")
+  c.plotter.plot(filename="./outputs/contour_plot.png", figsize=[10,10], truth=[0.603503  , 0.03026864, 1.6093055 , 0.01722082])
 
 # TODO: a tester
 # fig = c.plotter.plot(figsize=[10,10], truth=truth_0)
-
-c2st_metric = c2st(true_posterior_samples, predicted_samples, seed=0, n_folds=5)
-
-print(c2st_metric)
