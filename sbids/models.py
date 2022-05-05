@@ -64,7 +64,7 @@ class ConditionalRealNVP(hk.Module):
     
   def __call__(self, y):
     chain = tfb.Chain([
-          tfb.Permute(jnp.arange(self.d)[::-1])(tfb.RealNVP(2, bijector_fn=self.bijector_fn(y, name = 'b%d'%i))) for i in range(self.n_layer)
+          tfb.Permute(jnp.arange(self.d)[::-1])(tfb.RealNVP(self.d//2, bijector_fn=self.bijector_fn(y, name = 'b%d'%i))) for i in range(self.n_layer)
       ])
     
     nvp = tfd.TransformedDistribution(
