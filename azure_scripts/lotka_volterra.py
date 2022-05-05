@@ -3,6 +3,8 @@
 Original file is located at
     https://colab.research.google.com/drive/1Fw_H-gvHwGCwMOSIrc9i5SNCH-ueJAYI
 """
+import argparse
+import pickle
 from functools import partial
 
 import optax
@@ -18,14 +20,13 @@ tfd = tfp.distributions
 
 from tqdm import tqdm
 
+#!pip install git+https://github.com/Justinezgh/SBI-Diff-Simulator.git
 from sbids.metrics.c2st import c2st
 from sbids.tasks import lotka_volterra, get_samples_and_scores
 from sbids.bijectors.bijectors import MixtureAffineSigmoidBijector
+from sbids.models import AffineSigmoidCoupling, ConditionalRealNVP
 
-#!pip install git+https://github.com/Justinezgh/SBI-Diff-Simulator.git@u/EiffL/Infra
-#!pip install chainconsumer
 
-import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument("--batch_size", type=int, default=1000)
 parser.add_argument("--n_simulations", type=int, default=5e5)
@@ -96,81 +97,6 @@ def data_stream():
       batch_idx = perm[i * batch_size: (i + 1)*batch_size]
       yield normalized_reg[batch_idx], normalized_p[batch_idx], score[batch_idx]
 
-batch_generator = data_stream()
-
-
-class AffineSigmoidCoupling(hk.Module):
-  """This is the coupling layer used in the Flow."""
-
-  def __init__(self, y, *args, layers=[128, 128], n_components=32, activation=jax.nn.silu, **kwargs):
-    """
-    Args:
-    y, conditioning variable
-    layers, list of hidden layers
-    n_components, number of mixture components
-    activation, activation function for hidden layers
-    """
-    self.y = y
-    self.layers = layers
-    self.n_components = n_components
-    self.activation = activation
-    super(AffineSigmoidCoupling, self).__init__(*args, **kwargs)
-
-  def __call__(self, x, output_units, **condition_kwargs):
-
-    net = jnp.concatenate([x, self.y], axis=-1)
-    for i, layer_size in enumerate(self.layers):
-      net = self.activation(hk.Linear(layer_size, name='layer%d' % i)(net))
-
-    log_a_bound = 4
-    min_density_lower_bound = 1e-4
-    n_components = self.n_components
-
-    log_a = jax.nn.tanh(hk.Linear(output_units*n_components,
-                        name='l3')(net)) * log_a_bound
-    b = hk.Linear(output_units*n_components, name='l4')(net)
-    c = min_density_lower_bound + jax.nn.sigmoid(hk.Linear(
-        output_units*n_components, name='l5')(net)) * (1 - min_density_lower_bound)
-    p = hk.Linear(output_units*n_components, name='l6')(net)
-
-    log_a = log_a.reshape(-1, output_units, n_components)
-    b = b.reshape(-1, output_units, n_components)
-    c = c.reshape(-1, output_units, n_components)
-    p = p.reshape(-1, output_units, n_components)
-    p = jax.nn.softmax(p)
-
-    return MixtureAffineSigmoidBijector(jnp.exp(log_a), b, c, p)
-
-
-class ConditionalRealNVP(hk.Module):
-  """A normalizing flow based on RealNVP using specified bijector functions."""
-
-  def __init__(self, d, *args, n_layers=3, bijector_fn=AffineSigmoidCoupling, **kwargs):
-    """
-    Args:
-    d, dimensionality of the input
-    n_layers, number of layers
-    coupling_layer, list of coupling layers
-    """
-    self.d = d
-    self.n_layer = n_layers
-    self.bijector_fn = bijector_fn
-    super(ConditionalRealNVP, self).__init__(*args, **kwargs)
-
-  def __call__(self, y):
-    chain = tfb.Chain([
-      tfb.Permute(jnp.arange(self.d)[::-1])(
-        tfb.RealNVP(self.d // 2, bijector_fn=self.bijector_fn(y, name='b%d' % i))
-      ) 
-      for i in range(self.n_layer)
-    ])
-
-    nvp = tfd.TransformedDistribution(
-      tfd.MultivariateNormalDiag(0.5 * jnp.ones(self.d), scale_identity_multiplier=0.05),
-      bijector=chain
-    )
-    return nvp
-
 bijector = partial(AffineSigmoidCoupling, layers=args.layers, n_components=args.n_components, activation=jax.nn.silu)
 NF = partial(ConditionalRealNVP, n_layers=args.n_layers, bijector_fn=bijector)
 
@@ -180,7 +106,7 @@ nvp_sample_nd = hk.transform(lambda x: NF(args.dimension)(x).sample(10000, seed=
 
 rng_seq = hk.PRNGSequence(5)
 params_nd = nvp_nd.init(
-  next(rng_seq),  0.4 * jnp.ones([1, 4]), 0.4 * jnp.ones([1, 10])
+  next(rng_seq), 0.4 * jnp.ones([1, 4]), 0.4 * jnp.ones([1, 10])
 )
 
 scheduler = optax.exponential_decay(
@@ -209,6 +135,7 @@ def update(params, opt_state, weight, mu, batch, score):
 
 # train
 batch_loss = []
+batch_generator = data_stream()
 
 for epochs in tqdm(range(args.n_epochs)):
   for _ in range(n_batches):
@@ -225,7 +152,6 @@ for epochs in tqdm(range(args.n_epochs)):
     print('NAN')
     break
 
-import pickle
 with open("./outputs/params_nd.pkl", "wb") as fp:
   pickle.dump(params_nd, fp)
 
