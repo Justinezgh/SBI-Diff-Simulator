@@ -260,16 +260,11 @@ true_posterior_samples = jnp.load('posterior_z_fixedkey0-4.npy')
 c = ChainConsumer()
 c.add_chain(predicted_samples, parameters=parameters, name="prediction")
 c.add_chain(true_posterior_samples, parameters=parameters, name="truth")
-fig = c.plotter.plot(figsize=[10,10], truth=[0.603503  , 0.03026864, 1.6093055 , 0.01722082])
+fig = c.plotter.plot(filename="./outputs/contour_plot.png", figsize=[10,10], truth=[0.603503  , 0.03026864, 1.6093055 , 0.01722082])
 
 # TODO: a tester
 # fig = c.plotter.plot(figsize=[10,10], truth=truth_0)
-# TODO: save the figure
-# fig.savefig('figures/nvp_c2st_fixedkey0-4.png')
 
 c2st_metric = c2st(true_posterior_samples, predicted_samples, seed=0, n_folds=5)
 
-# TODO: save the c2st metric
-
-
-
+print(c2st_metric)
