@@ -195,7 +195,17 @@ if DO_PLOTS:
   c = ChainConsumer()
   c.add_chain(predicted_samples, parameters=parameters, name="prediction")
   c.add_chain(true_posterior_samples, parameters=parameters, name="truth")
-  c.plotter.plot(filename="./outputs/contour_plot.png", figsize=[10,10], truth=[0.603503  , 0.03026864, 1.6093055 , 0.01722082])
+  c.plotter.plot(
+    filename="./outputs/contour_plot.png", 
+    figsize=[10,10], 
+    truth=truth_0[0].tolist(), 
+    extents={
+      r'$\alpha$': (0.3, 1),
+      r'$\beta$':(0, 0.08),
+      r'$\gamma$':(0.8, 2.7),
+      r'$\delta$':(0, 0.05),
+    }
+  )
 
 # TODO: a tester
 # fig = c.plotter.plot(figsize=[10,10], truth=truth_0)
