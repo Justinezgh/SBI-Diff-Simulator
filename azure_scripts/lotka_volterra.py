@@ -7,8 +7,9 @@ import argparse
 import pickle
 from functools import partial
 
+from tqdm import tqdm
+
 import optax
-from sqlalchemy import desc
 import haiku as hk
 import numpy as np
 import jax
@@ -19,8 +20,6 @@ import tensorflow_probability as tfp; tfp = tfp.experimental.substrates.jax
 tfb = tfp.bijectors
 tfd = tfp.distributions
 
-from tqdm import tqdm
-
 try:
   from azureml.core import Run
   run = Run.get_context()
@@ -28,7 +27,6 @@ try:
 except ImportError:
   AZURE_RUN = False
 
-#!pip install git+https://github.com/Justinezgh/SBI-Diff-Simulator.git
 from sbids.metrics.c2st import c2st
 from sbids.tasks import lotka_volterra, get_samples_and_scores
 from sbids.models import AffineSigmoidCoupling, ConditionalRealNVP
@@ -45,6 +43,19 @@ parser.add_argument("--nf_layers", type=int, default=3)
 parser.add_argument("--n_components", type=int, default=32)
 parser.add_argument("--score_weight", type=float, default=0.0)
 args = parser.parse_args()
+
+if AZURE_RUN:
+  run.log('batch_size', args.batch_size)
+  run.log('n_simulations', args.n_simulations)
+  run.log('n_epochs', args.n_epochs)
+  run.log('dimension', args.dimension)
+  run.log('bijector_layers_size', args.bijector_layers_size)
+  run.log('bijector_layers_shape', args.bijector_layers_shape)
+  run.log('nf_layers', args.nf_layers)
+  run.log('n_components', args.n_components)
+  run.log('score_weight', args.score_weight)
+else:
+  print(args)
 
 # create truth
 key = jax.random.PRNGKey(0)
@@ -183,11 +194,11 @@ else:
 
 
 # plot results
-DO_PLOTS = True
 try:
   import arviz as az
   import matplotlib.pyplot as plt
-  from chainconsumer import ChainConsumer
+  # from chainconsumer import ChainConsumer
+  DO_PLOTS = True
 except ImportError:
   DO_PLOTS = False
 
@@ -200,23 +211,25 @@ if DO_PLOTS:
   plt.ylabel("Loss")
   plt.savefig('./outputs/loss.png')
   
-  parameters = [r'$\alpha$', r'$\beta$', r'$\gamma$', r'$\delta$']
+  parameters = ['alpha', 'beta', 'gamma', 'delta']
+  # parameters = [r'$\alpha$', r'$\beta$', r'$\gamma$', r'$\delta$']
 
-  c = ChainConsumer()
-  c.add_chain(predicted_samples, parameters=parameters, name="prediction")
-  c.add_chain(true_posterior_samples, parameters=parameters, name="truth")
-  c.plotter.plot(
-    filename="./outputs/contour_plot.png", 
-    figsize=[10,10], 
-    truth=truth_0[0].tolist(), 
-    extents={
-      r'$\alpha$': (0.3, 1),
-      r'$\beta$':(0, 0.08),
-      r'$\gamma$':(0.8, 2.7),
-      r'$\delta$':(0, 0.05),
-    }
-  )
+  # c = ChainConsumer()
+  # c.configure(usetex=False)
+  # c.add_chain(predicted_samples, parameters=parameters, name="prediction")
+  # c.add_chain(true_posterior_samples, parameters=parameters, name="truth")
+  # c.plotter.plot(
+  #   filename="./outputs/contour_plot.png", 
+  #   figsize=[10, 10], 
+  #   truth=truth_0[0].tolist(), 
+  #   extents={
+  #     'alpha': (0.3, 1),
+  #     'beta':(0, 0.08),
+  #     'gamma':(0.8, 2.7),
+  #     'delta':(0, 0.05),
+  #   }
+  # )
 
   if AZURE_RUN:
     run.log_image(name='loss', path='./outputs/loss.png', description='batch loss')
-    run.log_image(name='contour_plot', path='./outputs/contour_plot.png', description='contour plot of the predicted posterior vs true posterior')
+    # run.log_image(name='contour_plot', path='./outputs/contour_plot.png', description='contour plot of the predicted posterior vs true posterior')

@@ -14,11 +14,11 @@ src = ScriptRunConfig(
     arguments=[
         "--batch_size", 1000,
         "--n_simulations", 5e5,
-        "--n_epochs", 100,
+        "--n_epochs", 5,
         "--dimension", 4,
-        "--bijector_layers_size", 560,
-        "--bijector_layers_shape", 5,
-        "--nf_layers", 4,
+        "--bijector_layers_size", 128,
+        "--bijector_layers_shape", 2,
+        "--nf_layers", 3,
         "--n_components", 32,
         "--score_weight", 0.0
     ],
