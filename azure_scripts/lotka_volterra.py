@@ -8,6 +8,7 @@ import pickle
 from functools import partial
 
 import optax
+from sqlalchemy import desc
 import haiku as hk
 import numpy as np
 import jax
@@ -19,6 +20,13 @@ tfb = tfp.bijectors
 tfd = tfp.distributions
 
 from tqdm import tqdm
+
+try:
+  from azureml.core import Run
+  run = Run.get_context()
+  AZURE_RUN = True
+except ImportError:
+  AZURE_RUN = False
 
 #!pip install git+https://github.com/Justinezgh/SBI-Diff-Simulator.git
 from sbids.metrics.c2st import c2st
@@ -168,7 +176,10 @@ true_posterior_samples = jnp.load('posterior_z_fixedkey0-4.npy')
 
 # compute metric
 c2st_metric = c2st(true_posterior_samples, predicted_samples, seed=0, n_folds=5)
-print(c2st_metric)
+if AZURE_RUN:
+  run.log('c2st_metric', c2st_metric)
+else:
+  print(c2st_metric)
 
 
 # plot results
@@ -206,5 +217,6 @@ if DO_PLOTS:
     }
   )
 
-# TODO: a tester
-# fig = c.plotter.plot(figsize=[10,10], truth=truth_0)
+  if AZURE_RUN:
+    run.log_image(name='loss', path='./outputs/loss.png', description='batch loss')
+    run.log_image(name='contour_plot', path='./outputs/contour_plot.png', description='contour plot of the predicted posterior vs true posterior')
