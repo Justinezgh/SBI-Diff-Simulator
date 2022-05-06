@@ -25,7 +25,7 @@ from sbids.metrics.c2st import c2st
 from sbids.tasks import lotka_volterra, get_samples_and_scores
 from sbids.models import AffineSigmoidCoupling, ConditionalRealNVP
 
-
+# script arguments
 parser = argparse.ArgumentParser()
 parser.add_argument("--batch_size", type=int, default=1000)
 parser.add_argument("--n_simulations", type=int, default=5e5)
@@ -37,7 +37,7 @@ parser.add_argument("--n_components", type=int, default=32)
 parser.add_argument("--score_weight", type=float, default=0.0)
 args = parser.parse_args()
 
-# truth
+# create truth
 key = jax.random.PRNGKey(0)
 lokta_volterra_10 = partial(lotka_volterra, ts=jnp.linspace(0, 18.9, 5))
 lv_cond = condition(lokta_volterra_10, {'z': jnp.array([30.0, 1.0])})
@@ -102,19 +102,20 @@ NF = partial(ConditionalRealNVP, n_layers=args.n_layers, bijector_fn=bijector)
 nvp_nd = hk.without_apply_rng(hk.transform(lambda p, x: NF(args.dimension)(x).log_prob(p).squeeze()))
 nvp_sample_nd = hk.transform(lambda x: NF(args.dimension)(x).sample(10000, seed=hk.next_rng_key()))
 
-
+# init parameters
 rng_seq = hk.PRNGSequence(5)
 params_nd = nvp_nd.init(
   next(rng_seq), 0.4 * jnp.ones([1, 4]), 0.4 * jnp.ones([1, 10])
 )
 
+# init optimizer
 scheduler = optax.exponential_decay(
     init_value=0.001, transition_steps=2000, decay_rate=0.9, end_value=0.00001)
 optimizer = optax.chain(
   optax.scale_by_adam(), optax.scale_by_schedule(scheduler), optax.scale(-1))
 opt_state = optimizer.init(params_nd)
 
-
+# define loss function and model update
 def loss_fn(params, weight, mu, batch, score):
   log_prob, out = jax.vmap(
     jax.value_and_grad(
@@ -132,6 +133,7 @@ def update(params, opt_state, weight, mu, batch, score):
   new_params = optax.apply_updates(params, updates)
   return loss, new_params, new_opt_state
 
+# create data stream
 # train
 batch_loss = []
 batch_generator = data_stream()
@@ -165,14 +167,12 @@ jnp.save('./outputs/predicted_samples.npy', predicted_samples)
 
 true_posterior_samples = jnp.load('posterior_z_fixedkey0-4.npy')
 
-# METRICS
-
+# compute metric
 c2st_metric = c2st(true_posterior_samples, predicted_samples, seed=0, n_folds=5)
 print(c2st_metric)
 
 
-# PLOTS
-
+# plot results
 DO_PLOTS = True
 try:
   import arviz as az
