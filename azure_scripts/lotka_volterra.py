@@ -23,7 +23,6 @@ from tqdm import tqdm
 #!pip install git+https://github.com/Justinezgh/SBI-Diff-Simulator.git
 from sbids.metrics.c2st import c2st
 from sbids.tasks import lotka_volterra, get_samples_and_scores
-from sbids.bijectors.bijectors import MixtureAffineSigmoidBijector
 from sbids.models import AffineSigmoidCoupling, ConditionalRealNVP
 
 
