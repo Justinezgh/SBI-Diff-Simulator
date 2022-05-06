@@ -68,12 +68,11 @@ if jnp.isnan(batch).any() == True:
 # normalize data
 scale_theta = jnp.std(mu, axis=0) / 0.02
 shift_theta = jnp.mean(mu/scale_theta, axis=0) - 0.4
+transformation_params = tfb.Chain(
+    [tfb.Scale(scale_theta), tfb.Shift(shift_theta)])
 
 scale_reg = jnp.std(batch, axis=0) / 0.01
 shift_reg = jnp.mean(batch/scale_reg, axis=0) - 0.4
-
-transformation_params = tfb.Chain(
-    [tfb.Scale(scale_theta), tfb.Shift(shift_theta)])
 transformation_x = tfb.Chain(
   [tfb.Scale(scale_reg), tfb.Shift(shift_reg)])
 
@@ -91,9 +90,7 @@ nvp_sample_nd = hk.transform(lambda x: NF(args.dimension)(x).sample(10000, seed=
 
 # init parameters
 rng_seq = hk.PRNGSequence(5)
-params_nd = nvp_nd.init(
-  next(rng_seq), 0.4 * jnp.ones([1, 4]), 0.4 * jnp.ones([1, 10])
-)
+params_nd = nvp_nd.init(next(rng_seq), 0.4 * jnp.ones([1, 4]), 0.4 * jnp.ones([1, 10]))
 
 # init optimizer
 scheduler = optax.exponential_decay(
@@ -121,6 +118,21 @@ def update(params, opt_state, weight, mu, batch, score):
   return loss, new_params, new_opt_state
 
 # create data stream
+batch_size = args.batch_size
+n_train = len(batch)
+n_batches = n_train // batch_size
+
+def data_stream():
+  """
+  Creates a data stream with a predefined batch size.
+  """
+  rng = np.random.RandomState(0)
+  while True:
+    perm = rng.permutation(n_train)
+    for i in range(n_batches):
+      batch_idx = perm[i * batch_size: (i + 1)*batch_size]
+      yield normalized_reg[batch_idx], normalized_p[batch_idx], score[batch_idx]
+
 # train
 batch_loss = []
 batch_generator = data_stream()
