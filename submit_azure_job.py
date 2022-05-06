@@ -23,13 +23,14 @@ src = ScriptRunConfig(
         "--score_weight", 0.0
     ],
     compute_target=ComputeTarget(name="justine-k80", workspace=ws), 
-    environment=Environment.get(workspace=ws, name="tf27-jax-py38-cuda11-gpu", version="5"))
+    environment=Environment.get(workspace=ws, name="tf27-jax-py38-cuda11-gpu", version="6"))
 
 # Create a new experiment
 exp = Experiment(name=f"lotka-volterra", workspace=ws)
 
 # Submit run 
-run = exp.submit(src, show_output=True)
+run = exp.submit(src)
 
-# Print info in the terminal until completion (can be commented out)
+# Print info in the terminal until completion 
+# Useful for quick feedback on a short job, otherwise better to comment it out
 # run.wait_for_completion(show_output=True)
