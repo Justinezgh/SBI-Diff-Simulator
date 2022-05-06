@@ -31,8 +31,9 @@ parser.add_argument("--batch_size", type=int, default=1000)
 parser.add_argument("--n_simulations", type=int, default=5e5)
 parser.add_argument("--n_epochs", type=int, default=200)
 parser.add_argument("--dimension", type=int, default=4)
-parser.add_argument("--layers", type=list, default=[128, 128])
-parser.add_argument("--n_layers", type=int, default=3)
+parser.add_argument("--bijector_layers_size", type=int, default=256)
+parser.add_argument("--bijector_layers_shape", type=int, default=3)
+parser.add_argument("--nf_layers", type=int, default=3)
 parser.add_argument("--n_components", type=int, default=32)
 parser.add_argument("--score_weight", type=float, default=0.0)
 args = parser.parse_args()
@@ -79,25 +80,11 @@ transformation_x = tfb.Chain(
 normalized_p = transformation_params.inverse(mu)
 normalized_reg = transformation_x.inverse(batch)
 
-# create data stream
-batch_size = args.batch_size
-n_train = len(batch)
-n_batches = n_train // batch_size
+# create model
+bijector_layers = [args.bijector_layers_size] * args.bijector_layers_shape
 
-
-def data_stream():
-  """
-  Creates a data stream with a predefined batch size.
-  """
-  rng = np.random.RandomState(0)
-  while True:
-    perm = rng.permutation(n_train)
-    for i in range(n_batches):
-      batch_idx = perm[i * batch_size: (i + 1)*batch_size]
-      yield normalized_reg[batch_idx], normalized_p[batch_idx], score[batch_idx]
-
-bijector = partial(AffineSigmoidCoupling, layers=args.layers, n_components=args.n_components, activation=jax.nn.silu)
-NF = partial(ConditionalRealNVP, n_layers=args.n_layers, bijector_fn=bijector)
+bijector = partial(AffineSigmoidCoupling, layers=bijector_layers, n_components=args.n_components, activation=jax.nn.silu)
+NF = partial(ConditionalRealNVP, n_layers=args.nf_layers, bijector_fn=bijector)
 
 nvp_nd = hk.without_apply_rng(hk.transform(lambda p, x: NF(args.dimension)(x).log_prob(p).squeeze()))
 nvp_sample_nd = hk.transform(lambda x: NF(args.dimension)(x).sample(10000, seed=hk.next_rng_key()))
