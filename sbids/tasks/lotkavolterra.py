@@ -7,7 +7,7 @@ tfb = tfp.bijectors
 import numpyro
 import numpyro.distributions as dist
 
-__all__=["lokta_volterra"]
+__all__=["lokta_volterra", "lokta_volterra_y_bijector", "lokta_volterra_theta_bijector"]
 
 def _dz_dt(z, t, theta):
     """
