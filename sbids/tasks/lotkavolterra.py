@@ -1,6 +1,9 @@
 import jax.numpy as jnp
 from jax.experimental.ode import odeint
-from jax.random import PRNGKey
+from tensorflow_probability.substrates import jax as tfp
+tfd = tfp.distributions
+tfb = tfp.bijectors
+
 import numpyro
 import numpyro.distributions as dist
 
@@ -49,3 +52,15 @@ def lokta_volterra(y=None, ts=jnp.linspace(0,18.9,10)):
 
     # measured populations
     return numpyro.sample("y", dist.LogNormal(jnp.log(x), jnp.ones_like(x)*0.1), obs=y)
+
+# Defines some useful bijectors that normalize the output of the model to approximately Gaussian.
+lokta_volterra_y_bijector = tfb.Chain([ 
+                tfb.Scale(0.38), 
+                tfb.Invert(tfb.Softplus()),
+                tfb.Scale(0.021)
+                ])
+lokta_volterra_theta_bijector = tfb.Chain([
+                tfb.Scale(jnp.array([2.,2.,2.,2.])),
+                tfb.Shift(jnp.array([0.125,3,0.125,3])),
+                tfb.Log()
+                ])
