@@ -45,6 +45,7 @@ def lokta_volterra(y=None, ts=jnp.linspace(0,18.9,10)):
     
     # integrate dz/dt, the result will have shape N x 2
     x = odeint(_dz_dt, z, ts, theta, rtol=1e-6, atol=1e-5, mxstep=1000)
+    x = jnp.clip(x, 1e-10, 1e4) # clip to avoid nan
 
     # measured populations
     return numpyro.sample("y", dist.LogNormal(jnp.log(x), jnp.ones_like(x)*0.1), obs=y)
