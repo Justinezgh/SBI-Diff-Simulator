@@ -7,7 +7,7 @@ tfb = tfp.bijectors
 import numpyro
 import numpyro.distributions as dist
 
-__all__=["lokta_volterra", "lokta_volterra_y_bijector", "lokta_volterra_theta_bijector"]
+__all__=["lotka_volterra", "lotka_volterra_y_bijector", "lotka_volterra_theta_bijector"]
 
 def _dz_dt(z, t, theta):
     """
@@ -28,7 +28,7 @@ def _dz_dt(z, t, theta):
     return jnp.stack([du_dt, dv_dt])
 
 
-def lokta_volterra(y=None, ts=jnp.linspace(0,18.9,10)):
+def lotka_volterra(y=None, ts=jnp.linspace(0,18.9,10)):
     """
     Probabilistic model for the Lotka–Volterra system.
     :param int N: number of measurement times
@@ -54,12 +54,12 @@ def lokta_volterra(y=None, ts=jnp.linspace(0,18.9,10)):
     return numpyro.sample("y", dist.LogNormal(jnp.log(x), jnp.ones_like(x)*0.1), obs=y)
 
 # Defines some useful bijectors that normalize the output of the model to approximately Gaussian and unconstrained.
-lokta_volterra_y_bijector = tfb.Chain([ 
+lotka_volterra_y_bijector = tfb.Chain([ 
                 tfb.Scale(0.38), 
                 tfb.Invert(tfb.Softplus()),
                 tfb.Scale(0.021)
                 ])
-lokta_volterra_theta_bijector = tfb.Chain([
+lotka_volterra_theta_bijector = tfb.Chain([
                 tfb.Scale(jnp.array([2.,2.,2.,2.])),
                 tfb.Shift(jnp.array([0.125,3,0.125,3])),
                 tfb.Log()
