@@ -53,7 +53,7 @@ def lokta_volterra(y=None, ts=jnp.linspace(0,18.9,10)):
     # measured populations
     return numpyro.sample("y", dist.LogNormal(jnp.log(x), jnp.ones_like(x)*0.1), obs=y)
 
-# Defines some useful bijectors that normalize the output of the model to approximately Gaussian.
+# Defines some useful bijectors that normalize the output of the model to approximately Gaussian and unconstrained.
 lokta_volterra_y_bijector = tfb.Chain([ 
                 tfb.Scale(0.38), 
                 tfb.Invert(tfb.Softplus()),
