@@ -45,6 +45,7 @@ parser.add_argument("--bijector_layers_shape", type=int, default=3)
 parser.add_argument("--nf_layers", type=int, default=3)
 parser.add_argument("--n_components", type=int, default=32)
 parser.add_argument("--score_weight", type=float, default=0.0)
+parser.add_argument("--model_seed", type=int, default=0)
 args = parser.parse_args()
 
 if AZURE_RUN:
@@ -57,6 +58,7 @@ if AZURE_RUN:
   run.log('nf_layers', args.nf_layers)
   run.log('n_components', args.n_components)
   run.log('score_weight', args.score_weight)
+  run.log('model_seed', args.model_seed)
 else:
   print(args)
 
@@ -111,7 +113,7 @@ nvp_nd = hk.without_apply_rng(hk.transform(lambda p, x: NF(args.dimension)(x).lo
 nvp_sample_nd = hk.transform(lambda x: NF(args.dimension)(x).sample(10000, seed=hk.next_rng_key()))
 
 # init parameters
-rng_seq = hk.PRNGSequence(5)
+rng_seq = hk.PRNGSequence(args.model_seed)
 params_nd = nvp_nd.init(next(rng_seq), 0.4 * jnp.ones([1, 4]), 0.4 * jnp.ones([1, 10]))
 
 # init optimizer
