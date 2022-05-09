@@ -193,7 +193,7 @@ true_posterior_samples = jnp.load('posterior_z_fixedkey0-4.npy')
 # compute metric
 c2st_metric = c2st(true_posterior_samples, predicted_samples, seed=0, n_folds=5)
 if ON_AZURE:
-  run.log('c2st_metric', c2st_metric)
+  run.log('c2st_metric', float(c2st_metric))
 else:
   print(c2st_metric)
 
