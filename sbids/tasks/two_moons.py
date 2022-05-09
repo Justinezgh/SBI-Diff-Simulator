@@ -1,5 +1,4 @@
 import jax.numpy as np
-from sklearn.datasets import make_swiss_roll
 import tensorflow_probability as tfp; tfp = tfp.substrates.jax
 tfd = tfp.distributions
 
