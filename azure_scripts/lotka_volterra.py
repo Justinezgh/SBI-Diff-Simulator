@@ -24,9 +24,9 @@ tfd = tfp.distributions
 try:
   from azureml.core import Run
   run = Run.get_context()
-  AZURE_RUN = True
+  ON_AZURE = True
 except ImportError:
-  AZURE_RUN = False
+  ON_AZURE = False
 
 from sbids.metrics.c2st import c2st
 from sbids.tasks import lotka_volterra, get_samples_and_scores
@@ -48,7 +48,7 @@ parser.add_argument("--score_weight", type=float, default=0.0)
 parser.add_argument("--model_seed", type=int, default=0)
 args = parser.parse_args()
 
-if AZURE_RUN:
+if ON_AZURE:
   run.log('batch_size', args.batch_size)
   run.log('n_simulations', args.n_simulations)
   run.log('n_epochs', args.n_epochs)
@@ -192,7 +192,7 @@ true_posterior_samples = jnp.load('posterior_z_fixedkey0-4.npy')
 
 # compute metric
 c2st_metric = c2st(true_posterior_samples, predicted_samples, seed=0, n_folds=5)
-if AZURE_RUN:
+if ON_AZURE:
   run.log('c2st_metric', c2st_metric)
 else:
   print(c2st_metric)
