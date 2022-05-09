@@ -3,6 +3,7 @@
 Original file is located at
     https://colab.research.google.com/drive/1Fw_H-gvHwGCwMOSIrc9i5SNCH-ueJAYI
 """
+import os
 import argparse
 import pickle
 from functools import partial
@@ -30,6 +31,8 @@ except ImportError:
 from sbids.metrics.c2st import c2st
 from sbids.tasks import lotka_volterra, get_samples_and_scores
 from sbids.models import AffineSigmoidCoupling, ConditionalRealNVP
+
+os.makedirs("./outputs", exist_ok=True)
 
 # script arguments
 parser = argparse.ArgumentParser()
