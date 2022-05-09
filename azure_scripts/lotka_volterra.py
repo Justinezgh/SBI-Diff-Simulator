@@ -76,19 +76,6 @@ key = jax.random.PRNGKey(10)
 batch = np.reshape(samples['y'], (-1, 10), order='F')
 mu = samples['theta']
 
-# filter the samples
-if (batch > 500).any() == True:
-  idx = jnp.where(batch > 500)[0]
-  batch = jnp.delete(batch, idx, axis=0)
-  mu = jnp.delete(mu, idx, axis=0)
-  score = jnp.delete(score, idx, axis=0)
-
-if jnp.isnan(batch).any() == True:
-  idx = jnp.where(jnp.isnan(batch))[0]
-  batch = jnp.delete(batch, idx, axis=0)
-  mu = jnp.delete(mu, idx, axis=0)
-  score = jnp.delete(score, idx, axis=0)
-
 # normalize data
 scale_theta = jnp.std(mu, axis=0) / 0.02
 shift_theta = jnp.mean(mu/scale_theta, axis=0) - 0.4
@@ -176,6 +163,22 @@ for epochs in tqdm(range(args.n_epochs)):
     print('NAN')
     break
 
+try:
+  import arviz as az
+  import matplotlib.pyplot as plt
+  az.style.use("arviz-darkgrid")
+
+  plt.plot(batch_loss)
+  plt.title("Batch loss")
+  plt.xlabel("Batches")
+  plt.ylabel("Loss")
+  plt.savefig('./outputs/loss.png')
+
+  if ON_AZURE:
+    run.log_image(name='loss', path='./outputs/loss.png', description='batch loss')
+except ImportError:
+  pass
+
 with open("./outputs/params_nd.pkl", "wb") as fp:
   pickle.dump(params_nd, fp)
 
@@ -197,44 +200,70 @@ if ON_AZURE:
 else:
   print(c2st_metric)
 
-
 # plot results
-try:
+if ON_AZURE:
   import arviz as az
-  import matplotlib.pyplot as plt
-  # from chainconsumer import ChainConsumer
-  DO_PLOTS = True
-except ImportError:
-  DO_PLOTS = False
-
-if DO_PLOTS:
   az.style.use("arviz-darkgrid")
+  parameters = ["alpha", "beta", "gamma", "delta"]
 
-  plt.plot(batch_loss)
-  plt.title("Batch loss")
-  plt.xlabel("Batches")
-  plt.ylabel("Loss")
-  plt.savefig('./outputs/loss.png')
+  plt.figure(figsize=(10, 10))
+  ax = az.plot_pair(
+      data={
+        k: true_posterior_samples[:,i]
+        for i,k in enumerate(parameters)
+      },
+      kind="kde",
+      var_names=parameters,
+      kde_kwargs={
+          "hdi_probs": [0.3, 0.6, 0.9],  # Plot 30%, 60% and 90% HDI contours
+          "contourf_kwargs": {"cmap": "Greens"},
+      },
+      marginals=True,
+      marginal_kwargs={'color': 'g', 'label': 'truth'},
+
+  )
+  az.plot_pair(
+      data={
+        k: predicted_samples[:,i] 
+        for i,k in enumerate(parameters)
+      },
+      kind="kde",
+      var_names=parameters,
+      kde_kwargs={
+          "hdi_probs": [0.3, 0.6, 0.9],  # Plot 30%, 60% and 90% HDI contours
+          "contourf_kwargs": {"cmap": "Blues", "alpha": 0.7},
+      },
+      marginals=True,
+      marginal_kwargs={'color': 'b', 'label': 'predict'}, 
+      reference_values=dict(zip(parameters, np.array(truth_0))),
+      reference_values_kwargs={'markersize': 10, 'color': 'r', 'label': 'truth'}, 
+      ax = ax
+  )
+  plt.savefig("./outputs/contour_plot.png")
+
+else:
+  try:
+    from chainconsumer import ChainConsumer
+
+    parameters = [r'$\alpha$', r'$\beta$', r'$\gamma$', r'$\delta$']
+    c = ChainConsumer()
+    c.add_chain(predicted_samples, parameters=parameters, name="prediction")
+    c.add_chain(true_posterior_samples, parameters=parameters, name="truth")
+    c.plotter.plot(
+      filename="./outputs/contour_plot.png", 
+      figsize=[10, 10], 
+      truth=np.array(truth_0), 
+      extents={
+        r'$\alpha$': (0.3, 1),
+        r'$\beta$':(0, 0.08),
+        r'$\gamma$':(0.8, 2.7),
+        r'$\delta$':(0, 0.05),
+      }
+    )
+  except ImportError:
+    pass
+
+
+
   
-  parameters = ['alpha', 'beta', 'gamma', 'delta']
-  # parameters = [r'$\alpha$', r'$\beta$', r'$\gamma$', r'$\delta$']
-
-  # c = ChainConsumer()
-  # c.configure(usetex=False)
-  # c.add_chain(predicted_samples, parameters=parameters, name="prediction")
-  # c.add_chain(true_posterior_samples, parameters=parameters, name="truth")
-  # c.plotter.plot(
-  #   filename="./outputs/contour_plot.png", 
-  #   figsize=[10, 10], 
-  #   truth=truth_0[0].tolist(), 
-  #   extents={
-  #     'alpha': (0.3, 1),
-  #     'beta':(0, 0.08),
-  #     'gamma':(0.8, 2.7),
-  #     'delta':(0, 0.05),
-  #   }
-  # )
-
-  if AZURE_RUN:
-    run.log_image(name='loss', path='./outputs/loss.png', description='batch loss')
     # run.log_image(name='contour_plot', path='./outputs/contour_plot.png', description='contour plot of the predicted posterior vs true posterior')
