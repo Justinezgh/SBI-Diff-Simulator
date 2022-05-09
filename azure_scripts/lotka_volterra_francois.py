@@ -193,38 +193,40 @@ if ON_AZURE:
   import arviz as az
   az.style.use("arviz-darkgrid")
 
+  parameters = ["alpha", "beta", "gamma", "delta"]
+
   plt.figure(figsize=(10, 10))
   ax = az.plot_pair(
       data={
         k: reference_samples[:,i]
-        for i,k in enumerate(["alpha", "beta", "gamma", "delta"])
+        for i,k in enumerate(parameters)
       },
       kind="kde",
-      var_names=["alpha", "beta", "gamma", "delta"],
+      var_names=parameters,
       kde_kwargs={
           "hdi_probs": [0.3, 0.6, 0.9],  # Plot 30%, 60% and 90% HDI contours
           "contourf_kwargs": {"cmap": "Greens"},
       },
       marginals=True,
-      marginal_kwargs={'color':'g','label':'truth'},
+      marginal_kwargs={'color': 'g', 'label': 'truth'},
 
   );
   az.plot_pair(
       data={
         k: sample_nd[:,i] 
-        for i,k in enumerate(["alpha", "beta", "gamma", "delta"])
+        for i,k in enumerate(parameters)
       },
       kind="kde",
-          var_names=["alpha", "beta", "gamma", "delta"],
+      var_names=parameters,
       kde_kwargs={
           "hdi_probs": [0.3, 0.6, 0.9],  # Plot 30%, 60% and 90% HDI contours
-          "contourf_kwargs": {"cmap": "Blues","alpha": 0.7},
+          "contourf_kwargs": {"cmap": "Blues", "alpha": 0.7},
       },
       marginals=True,
-      marginal_kwargs={'color':'b','label':'predict'}, 
-      reference_values=np.array(truth),
-      reference_values_kwargs={'markersize':20, 'color':'r','label':'truth'}, 
-      ax = ax
+      marginal_kwargs={'color': 'b', 'label': 'predict'}, 
+      reference_values=dict(zip(parameters, np.array(truth))),
+      reference_values_kwargs={'markersize': 10, 'color': 'r', 'label': 'truth'}, 
+      ax=ax
   );
 else:
   try:
