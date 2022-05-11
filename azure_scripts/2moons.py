@@ -25,7 +25,7 @@ except ImportError:
   ON_AZURE = False
 
 from sbids.metrics.c2st import c2st
-from sbids.tasks.two_moons import get_two_moons
+#from sbids.tasks.two_moons import get_two_moons
 from sbids.models import AffineSigmoidCoupling, ConditionalRealNVP
 
 os.makedirs("./outputs", exist_ok=True)
@@ -40,6 +40,7 @@ parser.add_argument("--bijector_layers_shape", type=int, default=3)
 parser.add_argument("--nf_layers", type=int, default=4)
 parser.add_argument("--n_components", type=int, default=16)
 parser.add_argument("--score_weight", type=float, default=0.0)
+parser.add_argument("--score_nll", type=float, default=1)
 parser.add_argument("--model_seed", type=int, default=0)
 args = parser.parse_args()
 
@@ -52,9 +53,30 @@ if ON_AZURE:
   run.log('nf_layers', args.nf_layers)
   run.log('n_components', args.n_components)
   run.log('score_weight', args.score_weight)
+  run.log('score_nll', args.score_nll)
   run.log('model_seed', args.model_seed)
 else:
   print(args)
+
+def get_two_moons(sigma, resolution=1024, normalized=False):
+
+  outer_circ_x = np.cos(np.linspace(0, np.pi, resolution))
+  outer_circ_y = np.sin(np.linspace(0, np.pi, resolution))
+  inner_circ_x = 1 - np.cos(np.linspace(0, np.pi, resolution))
+  inner_circ_y = 1 - np.sin(np.linspace(0, np.pi, resolution)) - .5
+
+  X = np.append(outer_circ_x, inner_circ_x)
+  Y = np.append(outer_circ_y, inner_circ_y)
+
+  coords = np.vstack([X,Y])
+  if normalized:
+    coords = coords / 5 + 0.45
+
+  distribution = tfd.MixtureSameFamily(
+    mixture_distribution=tfd.Categorical(probs=np.ones(2*resolution) / resolution / 2),
+    components_distribution=tfd.MultivariateNormalDiag(loc=coords.T, scale_identity_multiplier=sigma)
+  )
+  return distribution
 
   
 # create data train
@@ -82,19 +104,19 @@ model_smooth = hk.without_apply_rng(hk.transform(
 
 
 # define loss function and model update
-def loss_fn(params, weight, batch, score):
+def loss_fn(params, score_weight, nll_weight, batch, score):
   log_prob, out = jax.vmap(
       jax.value_and_grad(
           lambda x, param: model_smooth.apply(param, 
           x.reshape([1,2])).squeeze()), 
           [0, None])(batch, params) 
-  return -jnp.mean(log_prob) + weight * jnp.mean(jnp.sum((out - score)**2, axis=1))
+  return -nll_weight * jnp.mean(log_prob) + score_weight * jnp.mean(jnp.sum((out - score)**2, axis=1))
 
 
 @jax.jit
-def update(params, opt_state, weight, batch, score):
+def update(params, opt_state, score_weight, nll_weight, batch, score):
   """Single SGD update step."""
-  loss, grads = jax.value_and_grad(loss_fn)(params, weight, batch, score)
+  loss, grads = jax.value_and_grad(loss_fn)(params, score_weight, nll_weight, batch, score)
   updates, new_opt_state = optimizer.update(grads, opt_state)
   new_params = optax.apply_updates(params, updates)
   return loss, new_params, new_opt_state
@@ -121,7 +143,12 @@ for n_simulations in [20,50,100,200,500,1000]:
   for step in tqdm(range(args.n_updates)): 
       
       inds = np.random.randint(0, n_simulations, args.batch_size) 
-      l, params_smooth, opt_state = update(params_smooth, opt_state, args.score_weight, batch[inds], score[inds])
+      l, params_smooth, opt_state = update(params_smooth, 
+                                           opt_state, 
+                                           args.score_weight, 
+                                           args.nll_weight, 
+                                           batch[inds], 
+                                           score[inds])
       batch_loss.append(l)
 
       if jnp.isnan(l)==True:
