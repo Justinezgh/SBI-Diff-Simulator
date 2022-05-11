@@ -126,17 +126,17 @@ optimizer = optax.adam(learning_rate=scheduler)
 opt_state = optimizer.init(params_nd)
 
 # define loss function and model update
-def loss_fn(params, weight, mu, batch, score):
+def loss_fn(params, mu, batch, score, score_weight):
   log_prob, out = jax.vmap(
     jax.value_and_grad(lambda theta, x: nvp_nd.apply(params, theta.reshape([1, 4]), x.reshape([1, -1])).squeeze())
   )(mu, batch)
-  return -jnp.mean(log_prob) + weight * jnp.mean(jnp.sum((out - score)**2, axis=1))
+  return -jnp.mean(log_prob) + score_weight * jnp.mean(jnp.sum((out - score)**2, axis=1))
 
 
 @jax.jit
-def update(params, opt_state, weight, mu, batch, score):
+def update(params, opt_state, mu, batch, score, score_weight=args.score_weight):
   """Single SGD update step."""
-  loss, grads = jax.value_and_grad(loss_fn)(params, weight, mu, batch, score)
+  loss, grads = jax.value_and_grad(loss_fn)(params, mu, batch, score, score_weight)
   updates, new_opt_state = optimizer.update(grads, opt_state)
   new_params = optax.apply_updates(params, updates)
 
@@ -146,7 +146,7 @@ def update(params, opt_state, weight, mu, batch, score):
 batch_loss = []
 for step in range(args.n_steps):
     mu, batch, score = get_batch(next(rng_seq))
-    l, params_nd, opt_state = update(params_nd, opt_state, args.score_weight, mu, batch, score)
+    l, params_nd, opt_state = update(params_nd, opt_state, mu, batch, score)
     if (step % 100) == 0 :
         print(f'Iter {step} / {args.n_steps}:', np.mean(batch_loss[50:]), scheduler(opt_state[1].count))
     batch_loss.append(l)
