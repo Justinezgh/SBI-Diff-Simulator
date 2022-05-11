@@ -40,7 +40,7 @@ parser.add_argument("--bijector_layers_shape", type=int, default=3)
 parser.add_argument("--nf_layers", type=int, default=4)
 parser.add_argument("--n_components", type=int, default=16)
 parser.add_argument("--score_weight", type=float, default=0.0)
-parser.add_argument("--score_nll", type=float, default=1)
+parser.add_argument("--nll_weight", type=float, default=1)
 parser.add_argument("--model_seed", type=int, default=0)
 args = parser.parse_args()
 
@@ -53,7 +53,7 @@ if ON_AZURE:
   run.log('nf_layers', args.nf_layers)
   run.log('n_components', args.n_components)
   run.log('score_weight', args.score_weight)
-  run.log('score_nll', args.score_nll)
+  run.log('nll_weight', args.nll_weight)
   run.log('model_seed', args.model_seed)
 else:
   print(args)
