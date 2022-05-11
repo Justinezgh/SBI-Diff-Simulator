@@ -150,7 +150,7 @@ for step in range(args.n_steps):
     mu, batch, score = get_batch(next(rng_seq))
     l, params_nd, opt_state = update(params_nd, opt_state, mu, batch, score)
     if (step % 100) == 0 and step > 0:
-        print(f'Iter {step:5d} ({step/args.n_steps:2.1f%}) | average loss = {np.mean(batch_loss[-50:]):2.3f} | learning rate = {scheduler(opt_state[1].count):.5f}')
+        print(f'Iter {step:5d} ({step/args.n_steps:2.1%}) | average loss = {np.mean(batch_loss[-50:]):2.3f} | learning rate = {scheduler(opt_state[1].count):.5f}')
     batch_loss.append(l)
 
 with open("./outputs/params_nd.pkl", "wb") as fp:
