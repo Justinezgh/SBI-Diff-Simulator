@@ -78,7 +78,7 @@ truth = jnp.array(task.get_true_parameters(num_observation=1).flatten())
 
 # create simulations
 @jax.jit
-def get_batch(key, batch_size=256):
+def get_batch(key, batch_size=args.batch_size):
     model = condition(lotka_volterra, {'z': jnp.array([30.,1.])})
     (log_probs, samples), scores = get_samples_and_scores(model, key, batch_size=batch_size)
     return samples['theta'], samples['y'].reshape([-1,20]), scores
@@ -145,7 +145,7 @@ def update(params, opt_state, weight, mu, batch, score):
 # train
 batch_loss = []
 for step in range(args.n_steps):
-    mu, batch, score = get_batch(next(rng_seq), batch_size=args.batch_size)
+    mu, batch, score = get_batch(next(rng_seq))
     l, params_nd, opt_state = update(params_nd, opt_state, args.score_weight, mu, batch, score)
     if (step % 100) == 0 :
         print(f'Iter {step} / {args.n_steps}:', np.mean(batch_loss[50:]), scheduler(opt_state[1].count))
