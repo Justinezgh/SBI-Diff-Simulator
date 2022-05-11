@@ -240,7 +240,7 @@ if ON_AZURE:
       ax = ax
   )
   plt.savefig("./outputs/contour_plot.png")
-
+  run.log_image(name='contour_plot', path='./outputs/contour_plot.png', description='contour plot of the predicted posterior vs true posterior')
 else:
   try:
     from chainconsumer import ChainConsumer
@@ -262,8 +262,3 @@ else:
     )
   except ImportError:
     pass
-
-
-
-  
-    # run.log_image(name='contour_plot', path='./outputs/contour_plot.png', description='contour plot of the predicted posterior vs true posterior')

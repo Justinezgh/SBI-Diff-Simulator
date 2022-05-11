@@ -212,7 +212,7 @@ if ON_AZURE:
       marginals=True,
       marginal_kwargs={'color': 'g', 'label': 'truth'},
 
-  );
+  )
   az.plot_pair(
       data={
         k: sample_nd[:,i] 
@@ -229,7 +229,9 @@ if ON_AZURE:
       reference_values=dict(zip(parameters, np.array(truth))),
       reference_values_kwargs={'markersize': 10, 'color': 'r', 'label': 'truth'}, 
       ax=ax
-  );
+  )
+  plt.savefig("./outputs/contour_plot.png")
+  run.log_image(name='contour_plot', path='./outputs/contour_plot.png', description='contour plot of the predicted posterior vs true posterior')
 else:
   try:
     from chainconsumer import ChainConsumer
@@ -247,8 +249,3 @@ else:
     )
   except ImportError:
     pass
-
-
-
-  
-    # run.log_image(name='contour_plot', path='./outputs/contour_plot.png', description='contour plot of the predicted posterior vs true posterior')
