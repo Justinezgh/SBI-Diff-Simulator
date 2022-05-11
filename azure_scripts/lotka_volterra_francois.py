@@ -99,7 +99,7 @@ NF = partial(
   bijector_fn=bijector
 )
 
-class SmoothNPE:
+class SmoothNPE(hk.Module):
     def __call__(self, y):
         net = lotka_volterra_y_bijector(y)
         net = jnp.sin(hk.Linear(256, name='comp1')(net))
