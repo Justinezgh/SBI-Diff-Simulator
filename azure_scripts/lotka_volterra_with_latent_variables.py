@@ -207,7 +207,7 @@ for seed_for_truth in range(5):
 
     c2st_save.append(c2st_metric)
 
-c2st_mean = jnp.mean(c2st_save)
+c2st_mean = jnp.mean(jnp.array(c2st_save))
 if ON_AZURE:
     run.log('c2st_metric_mean', float(c2st_mean))
 else:
