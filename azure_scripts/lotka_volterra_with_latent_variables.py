@@ -72,7 +72,7 @@ rng_seq = hk.PRNGSequence(args.model_seed)
 
 # create simulations
 @jax.jit
-def get_batch(key, batch_size=2e5):
+def get_batch(key, batch_size=5e5):
     model = lotka_volterra
     (log_probs, samples), scores = get_samples_and_scores(model, key, batch_size=batch_size)
     return samples['theta'], samples['y'].reshape([-1,20]), scores
@@ -207,6 +207,12 @@ for seed_for_truth in range(5):
 
     c2st_save.append(c2st_metric)
 
+c2st_mean = jnp.mean(c2st_save)
+if ON_AZURE:
+    run.log('c2st_metric_mean', float(c2st_mean))
+else:
+    print(c2st_mean)
+    
 # compute metric negative log probability
 mu, batch, _ = get_batch(jax.random.PRNGKey(1000))
 nlp = -jnp.mean(
