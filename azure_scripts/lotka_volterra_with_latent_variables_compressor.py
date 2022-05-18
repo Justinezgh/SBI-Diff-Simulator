@@ -71,7 +71,7 @@ rng_seq = hk.PRNGSequence(args.model_seed)
 
 # create simulations
 @jax.jit
-def get_batch(key, batch_size=2e5):
+def get_batch(key, batch_size=1e5):
     model = lotka_volterra
     (log_probs, samples), scores = get_samples_and_scores(model, key, batch_size=batch_size)
     return samples['theta'], samples['y'].reshape([-1,20], order='F'), scores
@@ -128,7 +128,7 @@ class Flow_nd_Compressor(hk.Module):
         nvp = NF_compressor(4)(y)
         return tfd.TransformedDistribution(nvp,
                                            tfb.Chain([tfb.Invert(lotka_volterra_theta_bijector),
-                                                      tfb.Scale(15.),
+                                                      tfb.Scale(20.),
                                                       tfb.Shift(-0.5)]))
 
 # compressor
@@ -138,6 +138,10 @@ nf = hk.without_apply_rng(hk.transform(lambda p,x : Flow_nd_Compressor()(x).log_
 
 a_file = open("params_compressor.pkl", "rb")
 parameters_compressor = pickle.load(a_file)
+
+reg = compressor.apply(parameters_compressor,batch)
+scale_reg = (jnp.std(reg, axis =0)/0.05)
+shift_reg = jnp.mean(reg/scale_reg, axis = 0)-0.5
 
 
 
@@ -160,11 +164,11 @@ NF_npe = partial(
 
 class SmoothNPE(hk.Module):
     def __call__(self, y):
-        net = (y+jnp.array([3.5,3.5,3,3.4]))/7
+        net = y/scale_reg - shift_reg
         nvp = NF_npe(4)(net)
         return tfd.TransformedDistribution(nvp,
                                            tfb.Chain([tfb.Invert(lotka_volterra_theta_bijector),
-                                                      tfb.Scale(15.),
+                                                      tfb.Scale(20.),
                                                       tfb.Shift(-0.5)]))
 
 nvp_nd = hk.without_apply_rng(hk.transform(lambda theta,y : SmoothNPE()(y).log_prob(theta).squeeze()))
