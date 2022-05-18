@@ -128,7 +128,7 @@ class Flow_nd_Compressor(hk.Module):
         nvp = NF_compressor(4)(y)
         return tfd.TransformedDistribution(nvp,
                                            tfb.Chain([tfb.Invert(lotka_volterra_theta_bijector),
-                                                      tfb.Scale(20.),
+                                                      tfb.Scale(30.),
                                                       tfb.Shift(-0.5)]))
 
 # compressor
@@ -140,7 +140,7 @@ a_file = open("params_compressor.pkl", "rb")
 parameters_compressor = pickle.load(a_file)
 
 reg = compressor.apply(parameters_compressor,batch)
-scale_reg = (jnp.std(reg, axis =0)/0.05)
+scale_reg = (jnp.std(reg, axis =0)/0.04)
 shift_reg = jnp.mean(reg/scale_reg, axis = 0)-0.5
 
 
@@ -168,7 +168,7 @@ class SmoothNPE(hk.Module):
         nvp = NF_npe(4)(net)
         return tfd.TransformedDistribution(nvp,
                                            tfb.Chain([tfb.Invert(lotka_volterra_theta_bijector),
-                                                      tfb.Scale(20.),
+                                                      tfb.Scale(30.),
                                                       tfb.Shift(-0.5)]))
 
 nvp_nd = hk.without_apply_rng(hk.transform(lambda theta,y : SmoothNPE()(y).log_prob(theta).squeeze()))
