@@ -1,11 +1,10 @@
 from setuptools import setup, find_packages
 
 setup(
-  name='SBI-Diff-Simulator',
+  name='sbids',
   version='0.0.1',
-  url='',
-  author='',
-  description='',
+  url='https://github.com/Justinezgh/SBI-Diff-Simulator',
+  description='SBI Diff Simulator',
   packages=find_packages(),
   install_requires=[
     'numpy>=1.19.2',
