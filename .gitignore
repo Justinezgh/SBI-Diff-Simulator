@@ -129,5 +129,5 @@ dmypy.json
 .pyre/
 
 *.ipynb
-
+aml_config
 .DS_Store
