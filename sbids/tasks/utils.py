@@ -1,7 +1,7 @@
 from numpyro.handlers import seed, trace, condition
 import jax
 
-def get_samples_and_scores(model, key, batch_size=64, score_type='density'):
+def get_samples_and_scores(model, key, batch_size=64, score_type='density', thetas=None):
     """
     Handling function sampling and computing the score from the model.
 
@@ -35,6 +35,7 @@ def get_samples_and_scores(model, key, batch_size=64, score_type='density'):
     keys = jax.random.split(key, batch_size)
 
     # Sample theta from the model
-    thetas = jax.vmap(lambda k: trace(seed(model, k)).get_trace()['theta']['value'])(keys)
+    if thetas == None:
+        thetas = jax.vmap(lambda k: trace(seed(model, k)).get_trace()['theta']['value'])(keys)
 
     return jax.vmap(jax.value_and_grad(log_prob_fn, has_aux=True))(thetas, keys)
