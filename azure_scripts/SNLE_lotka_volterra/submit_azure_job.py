@@ -144,7 +144,7 @@ for model_seed in range(6):
       train_pipeline = Pipeline(workspace = ws, steps = steps)
 
       # Create an experiment and run the pipeline
-      exp = Experiment(workspace = ws, name = '120922_10round_seq_nle_1e6score')
+      exp = Experiment(workspace = ws, name = '120922_10round_seq_nle_0score')
       pipeline_run = exp.submit(train_pipeline)
 
       time.sleep(5)
