@@ -18,18 +18,19 @@ def get_samples_and_scores(model, key, batch_size=64, score_type='density', thet
         cond_model = seed(cond_model, key)
         model_trace = trace(cond_model).get_trace()
 
-        theta_prob = model_trace['theta']['fn'].log_prob(model_trace['theta']['value'])
-        z_prob = model_trace['z']['fn'].log_prob(model_trace['z']['value'])
-        y_prob = model_trace['y']['fn'].log_prob(jax.lax.stop_gradient(model_trace['y']['value']))
+        if score_type == 'density':
+            logp = model_trace['theta']['fn'].log_prob(model_trace['theta']['value'])
+        elif score_type == 'conditional':
+            logp = 0
+
+        for i in range(len(model_trace) - 1): 
+          key, val = list(model_trace.items())[i]
+          logp += val['fn'].log_prob(val['value'])
 
         sample = {'theta': model_trace['theta']['value'],
-                  'y': model_trace['y']['value'],
-                  'z': model_trace['z']['value']}
-        
-        if score_type == 'density':
-            return theta_prob.sum() + z_prob.sum() + y_prob.sum(), sample
-        elif score_type == 'conditional':
-            return y_prob.sum() + z_prob.sum(), sample
+                  'y': model_trace['y']['value']}
+    
+        return logp, sample
     
     # Split the key by batch
     keys = jax.random.split(key, batch_size)
