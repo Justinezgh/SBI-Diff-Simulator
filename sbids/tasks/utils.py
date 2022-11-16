@@ -23,7 +23,7 @@ def get_samples_and_scores(model, key, batch_size=64, score_type='density', thet
         elif score_type == 'conditional':
             logp = 0
 
-        for i in range(len(model_trace) - 1): 
+        for i in range(1, len(model_trace)): 
           key, val = list(model_trace.items())[i]
           logp += val['fn'].log_prob(val['value'])
 
