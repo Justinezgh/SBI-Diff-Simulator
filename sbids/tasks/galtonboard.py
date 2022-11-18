@@ -35,7 +35,7 @@ def nail_positions(theta, n_rows, n_nails, level, nail):
                                                  0), 
                        0)
 
-    return nail_positions
+    return res
 
 def galton_board(y = None,  n_rows = 20, n_nails = 31):
   """
