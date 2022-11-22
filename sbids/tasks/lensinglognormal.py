@@ -34,7 +34,7 @@ def make_lognormal_power_map(power_map, shift, zero_freq_val=0.0):
   power_spectrum_for_lognorm = power_spectrum_for_lognorm.at[0,0].set(0.)
   return power_spectrum_for_lognorm
 
-def model(N=128,               # number of pixels on the map 
+def lensingLogNormal(N=128,               # number of pixels on the map 
           map_size=5,          # map size in deg.
           gal_per_arcmin2=10, 
           sigma_e=0.26,     # shape noise 
