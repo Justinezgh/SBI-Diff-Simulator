@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import numpy as np
 import jax.numpy as jnp
 import jax_cosmo as jc
@@ -7,8 +9,10 @@ from jax.scipy.ndimage import map_coordinates
 
 __all__=['lensingLogNormal']
 
+_BASEDIR = Path(__file__).parent.resolve()
+PARAM_FILE = "lognormal_shift.csv"
 
-lognormal_params = np.loadtxt('sbids/tasks/lognormal_shift.csv', skiprows=1, delimiter=',').reshape([8,8,3])
+lognormal_params = np.loadtxt(_BASEDIR / PARAM_FILE, skiprows=1, delimiter=',').reshape([8,8,3])
 
 
 @jax.jit
