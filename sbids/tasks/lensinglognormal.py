@@ -8,7 +8,7 @@ from jax.scipy.ndimage import map_coordinates
 __all__=['lensingLogNormal']
 
 
-lognormal_params = np.loadtxt('lognormal_shift.csv', skiprows=1, delimiter=',').reshape([8,8,3])
+lognormal_params = np.loadtxt('sbids/tasks/lognormal_shift.csv', skiprows=1, delimiter=',').reshape([8,8,3])
 
 
 @jax.jit
@@ -34,10 +34,10 @@ def make_lognormal_power_map(power_map, shift, zero_freq_val=0.0):
   power_spectrum_for_lognorm = power_spectrum_for_lognorm.at[0,0].set(0.)
   return power_spectrum_for_lognorm
 
-def lensingLogNormal(N=128,               # number of pixels on the map 
-          map_size=5,          # map size in deg.
+def lensingLogNormal(N=128,        # number of pixels on the map 
+          map_size=5,              # map size in deg.
           gal_per_arcmin2=10, 
-          sigma_e=0.26,     # shape noise 
+          sigma_e=0.26,            # shape noise 
           model_type='lognormal'): # either 'lognormal' or 'gaussian'      
     
     pix_area = (map_size * 60 / N)**2 # arcmin2 change
