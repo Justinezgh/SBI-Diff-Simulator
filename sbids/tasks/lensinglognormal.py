@@ -40,7 +40,7 @@ def lensingLogNormal(N=128,        # number of pixels on the map
           sigma_e=0.26,            # shape noise 
           model_type='lognormal'): # either 'lognormal' or 'gaussian'      
     
-    pix_area = (map_size * 60 / N)**2 # arcmin2 change
+    pix_area = (map_size * 60 / N)**2     # arcmin2 
     map_size = map_size / 180 * jnp.pi    # radians
 
     # Sampling cosmology
