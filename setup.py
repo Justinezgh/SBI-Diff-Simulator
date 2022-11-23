@@ -7,9 +7,10 @@ setup(
   description='SBI Diff Simulator',
   packages=find_packages(),
   package_dir={'sbids':'sbids'}, 
-   package_data={
+  package_data={
       'sbids': ['*.csv'],
    },
+  include_package_data=True,
   install_requires=[
     'numpy>=1.19.2',
     'jax>=0.2.0',
