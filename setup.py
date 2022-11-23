@@ -8,7 +8,7 @@ setup(
   packages=find_packages(),
   package_dir={'sbids':'sbids'}, 
    package_data={
-      'sbids': ['data/*.csv'],
+      'sbids': ['*.csv'],
    },
   install_requires=[
     'numpy>=1.19.2',
