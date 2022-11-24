@@ -8,10 +8,10 @@ from jax.scipy.ndimage import map_coordinates
 
 __all__=['lensingLogNormal']
 
-_BASEDIR = Path(__file__).parent.resolve()
-PARAM_FILE = "lognormal_shift.csv"
+# _BASEDIR = Path(__file__).parent.resolve()
+# PARAM_FILE = "lognormal_shift.csv"
 
-lognormal_params = np.loadtxt(_BASEDIR / PARAM_FILE, skiprows=1, delimiter=',').reshape([8,8,3])
+lognormal_params = np.loadtxt( "data/lognormal_shift.csv", skiprows=1, delimiter=',').reshape([8,8,3])
 
 
 def shift_fn(omega_m, sigma_8):
