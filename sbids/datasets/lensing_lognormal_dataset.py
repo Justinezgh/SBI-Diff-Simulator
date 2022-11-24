@@ -17,11 +17,11 @@ gcs_utils.gcs_dataset_info_files = lambda *args, **kwargs: None
 gcs_utils.is_dataset_on_gcs = lambda *args, **kwargs: False
 
 
-class LensingLogNormalConfig(tfds.core.BuilderConfig):
+class LensingLogNormalDatasetConfig(tfds.core.BuilderConfig):
 
   def __init__(self, *, N, map_size, gal_per_arcmin2, sigma_e, model_type, proposal, **kwargs):
     v1 = tfds.core.Version("0.0.1")
-    super(LensingLogNormalConfig, self).__init__(
+    super(LensingLogNormalDatasetConfig, self).__init__(
         description=("Lensing simulations."),
         version=v1,
         **kwargs)
@@ -34,21 +34,21 @@ class LensingLogNormalConfig(tfds.core.BuilderConfig):
 
 
 
-class LensingLogNormal(tfds.core.GeneratorBasedBuilder):
+class LensingLogNormalDataset(tfds.core.GeneratorBasedBuilder):
   """DatasetBuilder for my_dataset dataset."""
 
   VERSION = tfds.core.Version('0.0.1')
   RELEASE_NOTES = {
       '0.0.1': 'Initial release.',
   }
-  BUILDER_CONFIGS = [LensingLogNormalConfig(name="year_1", 
+  BUILDER_CONFIGS = [LensingLogNormalDatasetConfig(name="year_1", 
                                             N=128, 
                                             map_size=5, 
                                             gal_per_arcmin2=10, 
                                             sigma_e=0.26,
                                             model_type='lognormal', 
                                             proposal = True),
-                     LensingLogNormalConfig(name="year_10", 
+                     LensingLogNormalDatasetConfig(name="year_10", 
                                             N=128, 
                                             map_size=5, 
                                             gal_per_arcmin2=27, 
