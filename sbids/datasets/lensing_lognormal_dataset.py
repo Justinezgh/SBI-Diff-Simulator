@@ -9,7 +9,7 @@ from tensorflow_datasets.core.utils import gcs_utils
 import jax
 from functools import partial
 from pathlib import Path
-from sbids.tasks.lensingLogNormal import lensingLogNormal
+from sbids.tasks.lensinglognormal import lensingLogNormal
 from sbids.tasks import get_samples_and_scores
 
 # disable internet connection
