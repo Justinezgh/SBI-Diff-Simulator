@@ -16,6 +16,11 @@ from sbids.tasks import get_samples_and_scores
 gcs_utils.gcs_dataset_info_files = lambda *args, **kwargs: None
 gcs_utils.is_dataset_on_gcs = lambda *args, **kwargs: False
 
+_CITATION = """
+"""
+
+_DESCRIPTION = """
+"""
 
 class LensingLogNormalDatasetConfig(tfds.core.BuilderConfig):
 
@@ -60,7 +65,9 @@ class LensingLogNormalDataset(tfds.core.GeneratorBasedBuilder):
   def _info(self) -> tfds.core.DatasetInfo:
     """Returns the dataset metadata."""
     # TODO(my_dataset): Specifies the tfds.core.DatasetInfo object
-    return self.dataset_info_from_configs(
+    return tfds.core.DatasetInfo(
+        builder=self,
+        description=_DESCRIPTION,
         features=tfds.features.FeaturesDict({
             # These are the features of your dataset like images, labels ...
             'simulation': tfds.features.Image(shape=(self.builder_config.N, self.builder_config.N, 1)),
@@ -70,8 +77,9 @@ class LensingLogNormalDataset(tfds.core.GeneratorBasedBuilder):
         # If there's a common (input, target) tuple from the
         # features, specify them here. They'll be used if
         # `as_supervised=True` in `builder.as_dataset`.
-        # supervised_keys=('image', 'label'),  # Set to `None` to disable rien compris
+        supervised_keys=None,  # Set to `None` to disable rien compris
         homepage='https://dataset-homepage/',
+        citation=_CITATION,
     )
 
   def _split_generators(self, dl_manager: tfds.download.DownloadManager):
