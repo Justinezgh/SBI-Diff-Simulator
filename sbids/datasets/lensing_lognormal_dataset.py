@@ -127,7 +127,7 @@ class LensingLogNormalDataset(tfds.core.GeneratorBasedBuilder):
       (_, samples), scores = get_samples_and_scores(model, 
                                               key, 
                                               batch_size=1, 
-                                              thetas = thetas)                                     
+                                              thetas = thetas[i])                                     
       yield '{}'.format(i), {
             'simulation': samples['y'][0],
             'theta': samples['theta'][0],
