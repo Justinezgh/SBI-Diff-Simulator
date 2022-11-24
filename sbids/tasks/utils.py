@@ -18,18 +18,17 @@ def get_samples_and_scores(model, key, batch_size=64, score_type='density', thet
         cond_model = seed(cond_model, key)
         model_trace = trace(cond_model).get_trace()
 
-        if score_type == 'density':
-            logp = model_trace['theta']['fn'].log_prob(model_trace['theta']['value'])
-        elif score_type == 'conditional':
-            logp = 0
-
-        for i in range(1, len(model_trace)): 
+        logp = 0 
+        for i in range(len(model_trace)): 
           key, val = list(model_trace.items())[i]
-          logp += val['fn'].log_prob(val['value'])
+          
+          if not (key == 'theta' and score_type == 'conditional'):
+            logp += val['fn'].log_prob(val['value']).sum()
 
         sample = {'theta': model_trace['theta']['value'],
                   'y': model_trace['y']['value']}
-    
+
+
         return logp, sample
     
     # Split the key by batch
