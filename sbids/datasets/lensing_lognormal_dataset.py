@@ -102,11 +102,15 @@ class LensingLogNormalDataset(tfds.core.GeneratorBasedBuilder):
     """Yields examples."""
     # TODO(my_dataset): Yields (key, example) tuples from the dataset
     
-    _BASEDIR = Path(__file__).parent.resolve()
-    PARAM_FILE = "sample_full_field.npy"
+
+    SOURCE_FILE = Path(__file__)
+    SOURCE_DIR = SOURCE_FILE.parent
+    ROOT_DIR = SOURCE_DIR.parent.resolve()
+    DATA_DIR = ROOT_DIR / "data"
+    "sample_full_field.npy"
 
     if self.builder_config.proposal == True:
-        thetas = np.load(_BASEDIR / PARAM_FILE)
+        thetas = np.load(DATA_DIR / "sample_full_field.npy")
     else: 
         thetas = None
 
