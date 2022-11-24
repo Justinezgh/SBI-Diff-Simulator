@@ -8,9 +8,9 @@ from jax.scipy.ndimage import map_coordinates
 
 __all__=['lensingLogNormal']
 
-SOURCE_FILE = Path(__file__).parent.resolve()
+SOURCE_FILE = Path(__file__)
 SOURCE_DIR = SOURCE_FILE.parent
-ROOT_DIR = SOURCE_DIR.parent
+ROOT_DIR = SOURCE_DIR.parent.resolve()
 DATA_DIR = ROOT_DIR / "data"
 
 
