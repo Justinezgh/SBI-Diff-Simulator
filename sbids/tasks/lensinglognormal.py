@@ -63,7 +63,7 @@ def lensingLogNormal(N=128,        # number of pixels on the map
     P = lambda k: jc.scipy.interpolate.interp(k.flatten(), ell_tab, cell_tab).reshape(k.shape)
     
     # Sampling latent variables
-    z = numpyro.sample('z', dist.MultivariateNormal(loc=jnp.zeros((N,N)), precision_matrix=jnp.eye(N)))
+    z = numpyro.sample('z', dist.Independent(dist.MultivariateNormal(loc=jnp.zeros((N,N)), precision_matrix=jnp.eye(N)),1))
 
     # Convolving by the power spectrum
     power_map = make_power_map(P, N, map_size) 
