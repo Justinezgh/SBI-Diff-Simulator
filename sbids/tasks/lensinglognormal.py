@@ -1,5 +1,4 @@
 from pathlib import Path
-import jax
 import numpy as np
 import jax.numpy as jnp
 import jax_cosmo as jc
@@ -15,7 +14,6 @@ PARAM_FILE = "lognormal_shift.csv"
 lognormal_params = np.loadtxt(_BASEDIR / PARAM_FILE, skiprows=1, delimiter=',').reshape([8,8,3])
 
 
-@jax.jit
 def shift_fn(omega_m, sigma_8):
   omega_m = jnp.atleast_1d(omega_m)
   sigma_8 = jnp.atleast_1d(sigma_8) 
