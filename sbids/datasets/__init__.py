@@ -1,1 +1,1 @@
-from sbids.datasets.lensing_lognormal_dataset import LensingLogNormal
+from sbids.datasets.lensing_lognormal_dataset import LensingLogNormalDataset
