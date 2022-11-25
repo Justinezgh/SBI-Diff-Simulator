@@ -49,7 +49,15 @@ class LensingLogNormalDataset(tfds.core.GeneratorBasedBuilder):
   RELEASE_NOTES = {
       '0.0.1': 'Initial release.',
   }
-  BUILDER_CONFIGS = [LensingLogNormalDatasetConfig(name="year_1_score_density", 
+  BUILDER_CONFIGS = [LensingLogNormalDatasetConfig(name="toy_model", 
+                                            N=128, 
+                                            map_size=5, 
+                                            gal_per_arcmin2=30, 
+                                            sigma_e=0.2,
+                                            model_type='lognormal', 
+                                            proposal = True, 
+                                            score_type = 'density'),
+                    LensingLogNormalDatasetConfig(name="year_1_score_density", 
                                             N=128, 
                                             map_size=5, 
                                             gal_per_arcmin2=10, 
@@ -99,10 +107,17 @@ class LensingLogNormalDataset(tfds.core.GeneratorBasedBuilder):
     SOURCE_DIR = SOURCE_FILE.parent
     ROOT_DIR = SOURCE_DIR.parent.resolve()
     DATA_DIR = ROOT_DIR / "data"
-    "sample_full_field.npy"
+
+    if self.builder_config.name == 'toy_model':
+      FILE = "sample_full_field.npy"
+    elif self.builder_config.name == "year_1_score_density":
+      FILE = " "
+    elif self.builder_config.name == "year_10_score_density":
+      FILE = " "
+  
 
     if self.builder_config.proposal == True:
-        thetas = np.load(DATA_DIR / "sample_full_field.npy")
+        thetas = np.load(DATA_DIR / FILE)
     else: 
         thetas = None
 
