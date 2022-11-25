@@ -111,10 +111,10 @@ class LensingLogNormalDataset(tfds.core.GeneratorBasedBuilder):
                     self.builder_config.model_type)
 
     @jax.jit 
-    def get_batch(key, batch_size, thetas):
+    def get_batch(key, thetas):
       (_, samples), scores = get_samples_and_scores(model, 
                                               key, 
-                                              batch_size, 
+                                              1, 
                                               thetas = thetas) 
 
       return samples['y'][0], samples['theta'][0], scores[0]
@@ -123,7 +123,7 @@ class LensingLogNormalDataset(tfds.core.GeneratorBasedBuilder):
     for i in tqdm(range(size)):    
       key, master_key = jax.random.split(master_key)
 
-      simu, theta, score = get_batch(key, 1, thetas[i].reshape([1,-1]))                                    
+      simu, theta, score = get_batch(key, thetas[i].reshape([1,-1]))                                    
 
       yield '{}'.format(i), {
             'simulation': simu,
