@@ -35,7 +35,7 @@ def get_samples_and_scores(model, key, batch_size=64, score_type='density', thet
     keys = jax.random.split(key, batch_size)
 
     # Sample theta from the model
-    if thetas == None:
+    if thetas is None:
         thetas = jax.vmap(lambda k: trace(seed(model, k)).get_trace()['theta']['value'])(keys)
 
     return jax.vmap(jax.value_and_grad(log_prob_fn, has_aux=True))(thetas, keys)
