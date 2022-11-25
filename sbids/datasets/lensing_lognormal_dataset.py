@@ -26,7 +26,7 @@ _DESCRIPTION = """
 
 class LensingLogNormalDatasetConfig(tfds.core.BuilderConfig):
 
-  def __init__(self, *, N, map_size, gal_per_arcmin2, sigma_e, model_type, proposal, **kwargs):
+  def __init__(self, *, N, map_size, gal_per_arcmin2, sigma_e, model_type, proposal, score_type, **kwargs):
     v1 = tfds.core.Version("0.0.1")
     super(LensingLogNormalDatasetConfig, self).__init__(
         description=("Lensing simulations."),
@@ -38,6 +38,7 @@ class LensingLogNormalDatasetConfig(tfds.core.BuilderConfig):
     self.sigma_e = sigma_e
     self.model_type = model_type
     self.proposal = proposal
+    self.score_type = score_type
 
 
 
@@ -48,20 +49,22 @@ class LensingLogNormalDataset(tfds.core.GeneratorBasedBuilder):
   RELEASE_NOTES = {
       '0.0.1': 'Initial release.',
   }
-  BUILDER_CONFIGS = [LensingLogNormalDatasetConfig(name="year_1", 
+  BUILDER_CONFIGS = [LensingLogNormalDatasetConfig(name="year_1_score_density", 
                                             N=128, 
                                             map_size=5, 
                                             gal_per_arcmin2=10, 
                                             sigma_e=0.26,
                                             model_type='lognormal', 
-                                            proposal = True),
-                     LensingLogNormalDatasetConfig(name="year_10", 
+                                            proposal = True, 
+                                            score_type = 'density'),
+                     LensingLogNormalDatasetConfig(name="year_10_score_density", 
                                             N=128, 
                                             map_size=5, 
                                             gal_per_arcmin2=27, 
                                             sigma_e=0.26, 
                                             model_type='lognormal', 
-                                            proposal = True),
+                                            proposal = True, 
+                                            score_type = 'density'),
   ]
 
   def _info(self) -> tfds.core.DatasetInfo:
@@ -112,10 +115,11 @@ class LensingLogNormalDataset(tfds.core.GeneratorBasedBuilder):
 
     @jax.jit 
     def get_batch(key, thetas):
-      (_, samples), scores = get_samples_and_scores(model, 
-                                              key, 
-                                              1, 
-                                              thetas) 
+      (_, samples), scores = get_samples_and_scores(model = model, 
+                                              key = key, 
+                                              batch_size = 1, 
+                                              score_type = self.builder_config.score_type,
+                                              thetas = thetas) 
 
       return samples['y'][0], samples['theta'][0], scores[0]
 
