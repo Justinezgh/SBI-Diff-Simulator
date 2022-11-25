@@ -3,7 +3,7 @@ import tensorflow_datasets as tfds
 
 
 def load_dataset(name="year_1", batch_size=1, split="100%", shuffle_files=False):
-  ds = tfds.load(name, split='[:{}]'.format(split), shuffle_files=shuffle_files)
+  ds = tfds.load(name, split='train[:{}]'.format(split), shuffle_files=shuffle_files)
   ds = ds.repeat()
   ds = ds.batch(batch_size)
   ds = ds.prefetch(tf.data.experimental.AUTOTUNE)

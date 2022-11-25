@@ -85,7 +85,7 @@ class LensingLogNormalDataset(tfds.core.GeneratorBasedBuilder):
 
     return [
         tfds.core.SplitGenerator(name=tfds.Split.TRAIN, 
-                                 gen_kwargs={'size': 15000}),
+                                 gen_kwargs={'size': 150}),
 
     ]
 
