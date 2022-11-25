@@ -12,6 +12,8 @@ from pathlib import Path
 from sbids.tasks.lensinglognormal import lensingLogNormal
 from sbids.tasks import get_samples_and_scores
 
+from tqdm import tqdm 
+
 # disable internet connection
 gcs_utils.gcs_dataset_info_files = lambda *args, **kwargs: None
 gcs_utils.is_dataset_on_gcs = lambda *args, **kwargs: False
@@ -64,44 +66,31 @@ class LensingLogNormalDataset(tfds.core.GeneratorBasedBuilder):
 
   def _info(self) -> tfds.core.DatasetInfo:
     """Returns the dataset metadata."""
-    # TODO(my_dataset): Specifies the tfds.core.DatasetInfo object
+    
     return tfds.core.DatasetInfo(
         builder=self,
         description=_DESCRIPTION,
         features=tfds.features.FeaturesDict({
-            # These are the features of your dataset like images, labels ...
-            'simulation': tfds.features.Image(shape=(self.builder_config.N, self.builder_config.N, 1)),
+            'simulation': tfds.features.Tensor(shape=[self.builder_config.N, self.builder_config.N], dtype=tf.float32),
             'theta': tfds.features.Tensor(shape=[2], dtype=tf.float32),
             'score': tfds.features.Tensor(shape=[2], dtype=tf.float32),
         }),
-        # If there's a common (input, target) tuple from the
-        # features, specify them here. They'll be used if
-        # `as_supervised=True` in `builder.as_dataset`.
-        supervised_keys=None,  # Set to `None` to disable rien compris
+        supervised_keys=None,  
         homepage='https://dataset-homepage/',
         citation=_CITATION,
     )
 
   def _split_generators(self, dl_manager: tfds.download.DownloadManager):
     """Returns SplitGenerators."""
-    # TODO(my_dataset): Downloads the data and defines the splits
-    # path = dl_manager.download_and_extract('https://todo-data-url')
 
-    # TODO(my_dataset): Returns the Dict[split names, Iterator[Key, Example]]
-    # return {
-    #     'train': self._generate_examples(path / 'train_imgs'),
-    # }
     return [
         tfds.core.SplitGenerator(name=tfds.Split.TRAIN, 
                                  gen_kwargs={'size': 15000}),
-        # tfds.core.SplitGenerator(name=tfds.Split.TEST, 
-        # ),
+
     ]
 
   def _generate_examples(self, size):
     """Yields examples."""
-    # TODO(my_dataset): Yields (key, example) tuples from the dataset
-    
 
     SOURCE_FILE = Path(__file__)
     SOURCE_DIR = SOURCE_FILE.parent
@@ -121,15 +110,23 @@ class LensingLogNormalDataset(tfds.core.GeneratorBasedBuilder):
                     self.builder_config.sigma_e,
                     self.builder_config.model_type)
 
-    master_key = jax.random.PRNGKey(2948570986789)
-    for i in range(size):    
-      key, master_key = jax.random.split(master_key)
+    @jax.jit 
+    def get_batch(key, batch_size, thetas):
       (_, samples), scores = get_samples_and_scores(model, 
                                               key, 
-                                              batch_size=1, 
-                                              thetas = thetas[i])                                     
+                                              batch_size, 
+                                              thetas = thetas) 
+
+      return samples['y'][0], samples['theta'][0], scores[0]
+
+    master_key = jax.random.PRNGKey(2948570986789)
+    for i in tqdm(range(size)):    
+      key, master_key = jax.random.split(master_key)
+
+      simu, theta, score = get_batch(key, 1, thetas[i].reshape([1,-1]))                                    
+
       yield '{}'.format(i), {
-            'simulation': samples['y'][0],
-            'theta': samples['theta'][0],
-            'score': scores[0]
+            'simulation': simu,
+            'theta': theta,
+            'score': score
         }
