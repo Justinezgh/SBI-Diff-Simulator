@@ -96,7 +96,7 @@ class LensingLogNormalDataset(tfds.core.GeneratorBasedBuilder):
 
     return [
         tfds.core.SplitGenerator(name=tfds.Split.TRAIN, 
-                                 gen_kwargs={'size': 150}),
+                                 gen_kwargs={'size': 15000}),
 
     ]
 
@@ -118,6 +118,8 @@ class LensingLogNormalDataset(tfds.core.GeneratorBasedBuilder):
 
     if self.builder_config.proposal == True:
         thetas = np.load(DATA_DIR / FILE)
+        if size > len(thetas):
+          size = len(thetas)
     else: 
         thetas = None
 
