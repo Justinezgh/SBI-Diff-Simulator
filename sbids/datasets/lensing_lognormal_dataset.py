@@ -141,7 +141,7 @@ class LensingLogNormalDataset(tfds.core.GeneratorBasedBuilder):
       return samples['y'][0], samples['theta'][0], scores[0]
 
     master_key = jax.random.PRNGKey(2948570986789)
-    for i in tqdm(range(size)):    
+    for i in range(size):    
       key, master_key = jax.random.split(master_key)
 
       simu, theta, score = get_batch(key, thetas[i].reshape([1,-1]))                                    
