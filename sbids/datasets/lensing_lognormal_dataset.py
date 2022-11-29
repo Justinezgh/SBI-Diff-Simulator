@@ -119,6 +119,7 @@ class LensingLogNormalDataset(tfds.core.GeneratorBasedBuilder):
     bs = 20
     if self.builder_config.proposal == True:
         thetas = np.load(DATA_DIR / FILE)
+        thetas = thetas[:(len(thetas)//bs)*bs]
         if size > len(thetas):
           size = len(thetas)
         thetas = thetas.reshape([-1,bs,2])
