@@ -109,7 +109,7 @@ class LensingLogNormalDataset(tfds.core.GeneratorBasedBuilder):
     DATA_DIR = ROOT_DIR / "data"
 
     if self.builder_config.name == 'toy_model':
-      FILE = "sample_full_field.npy"
+      FILE = "sample_power_spectrum.npy.npy"
     elif self.builder_config.name == "year_1_score_density":
       FILE = " "
     elif self.builder_config.name == "year_10_score_density":
