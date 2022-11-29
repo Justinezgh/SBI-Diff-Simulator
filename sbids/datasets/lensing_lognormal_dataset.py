@@ -49,7 +49,7 @@ class LensingLogNormalDataset(tfds.core.GeneratorBasedBuilder):
   RELEASE_NOTES = {
       '0.0.1': 'Initial release.',
   }
-  BUILDER_CONFIGS = [LensingLogNormalDatasetConfig(name="toy_model", 
+  BUILDER_CONFIGS = [LensingLogNormalDatasetConfig(name="toy_model_with_proposal", 
                                             N=128, 
                                             map_size=5, 
                                             gal_per_arcmin2=30, 
@@ -96,7 +96,7 @@ class LensingLogNormalDataset(tfds.core.GeneratorBasedBuilder):
 
     return [
         tfds.core.SplitGenerator(name=tfds.Split.TRAIN, 
-                                 gen_kwargs={'size': 15000}),
+                                 gen_kwargs={'size': 500000}),
 
     ]
 
@@ -108,20 +108,22 @@ class LensingLogNormalDataset(tfds.core.GeneratorBasedBuilder):
     ROOT_DIR = SOURCE_DIR.parent.resolve()
     DATA_DIR = ROOT_DIR / "data"
 
-    if self.builder_config.name == 'toy_model':
-      FILE = "sample_power_spectrum.npy.npy"
+    if self.builder_config.name == 'toy_model_with_proposal':
+      FILE = "sample_power_spectrum_toy_model.npy"
     elif self.builder_config.name == "year_1_score_density":
-      FILE = " "
+      FILE = "sample_power_spectrum_year_1.npy"
     elif self.builder_config.name == "year_10_score_density":
-      FILE = " "
-  
+      FILE = "sample_power_spectrum_year_10.npy"
 
+  
+    bs = 20
     if self.builder_config.proposal == True:
         thetas = np.load(DATA_DIR / FILE)
         if size > len(thetas):
           size = len(thetas)
+        thetas = thetas.reshape([-1,bs,2])
     else: 
-        thetas = None
+        thetas = np.array([None]).repeat(size // bs)
 
     model = partial(lensingLogNormal, 
                     self.builder_config.N, 
@@ -134,20 +136,22 @@ class LensingLogNormalDataset(tfds.core.GeneratorBasedBuilder):
     def get_batch(key, thetas):
       (_, samples), scores = get_samples_and_scores(model = model, 
                                               key = key, 
-                                              batch_size = 1, 
+                                              batch_size = bs, 
                                               score_type = self.builder_config.score_type,
                                               thetas = thetas) 
 
-      return samples['y'][0], samples['theta'][0], scores[0]
+      return samples['y'], samples['theta'], scores
 
     master_key = jax.random.PRNGKey(2948570986789)
-    for i in range(size):    
+
+
+    for i in range(size // bs):    
       key, master_key = jax.random.split(master_key)
+      simu, theta, score = get_batch(key, thetas[i])  
 
-      simu, theta, score = get_batch(key, thetas[i].reshape([1,-1]))                                    
-
-      yield '{}'.format(i), {
-            'simulation': simu,
-            'theta': theta,
-            'score': score
-        }
+      for j in range(bs):                                  
+        yield '{}-{}'.format(i,j), {
+              'simulation': simu[j],
+              'theta': theta[j],
+              'score': score[j]
+          }
