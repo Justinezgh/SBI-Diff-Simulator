@@ -116,7 +116,7 @@ class LensingLogNormalDataset(tfds.core.GeneratorBasedBuilder):
       FILE = "sample_power_spectrum_year_10.npy"
 
   
-    bs = 50
+    bs = 200
     if self.builder_config.proposal == True:
         thetas = np.load(DATA_DIR / FILE)
         thetas = thetas[:(len(thetas)//bs)*bs]
