@@ -1,2 +1,3 @@
 from sbids.tasks.lotkavolterra import lotka_volterra, lotka_volterra_y_bijector, lotka_volterra_theta_bijector
 from sbids.tasks.utils import get_samples_and_scores
+from sbids.tasks.lensinglognormal import lensingLogNormal

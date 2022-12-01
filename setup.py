@@ -6,6 +6,11 @@ setup(
   url='https://github.com/Justinezgh/SBI-Diff-Simulator',
   description='SBI Diff Simulator',
   packages=find_packages(),
+  package_dir={'sbids':'sbids'}, 
+  package_data={
+      'sbids': ['data/*.csv', 'data/*.npy'],
+   },
+  include_package_data=True,
   install_requires=[
     'numpy>=1.19.2',
     'jax>=0.2.0',
