@@ -25,7 +25,7 @@ def get_samples_and_scores(model, key, batch_size=64, score_type='density', thet
           if not (key == 'theta' and score_type == 'conditional'):
             logp += val['fn'].log_prob(val['value']).sum()
         
-        logp += model_trace['y']['fn'].log_prob(jax.lax.stop_gradient(model_trace['y']['value']))
+        logp += model_trace['y']['fn'].log_prob(jax.lax.stop_gradient(model_trace['y']['value'])).sum()
 
         sample = {'theta': model_trace['theta']['value'],
                   'y': model_trace['y']['value']}
