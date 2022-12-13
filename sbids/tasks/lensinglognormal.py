@@ -43,7 +43,8 @@ def lensingLogNormal(N=128,        # number of pixels on the map
           map_size=5,              # map size in deg.
           gal_per_arcmin2=10, 
           sigma_e=0.26,            # shape noise 
-          model_type='lognormal'): # either 'lognormal' or 'gaussian'      
+          model_type='lognormal',  # either 'lognormal' or 'gaussian'
+          with_noise=True):       
     
     pix_area = (map_size * 60 / N)**2     # arcmin2 
     map_size = map_size / 180 * jnp.pi    # radians
@@ -77,7 +78,10 @@ def lensingLogNormal(N=128,        # number of pixels on the map
     if model_type == 'lognormal':
       field = shift * (jnp.exp(field - jnp.var(field) / 2) - 1)
 
-    # Adding "observational noise"
-    x = numpyro.sample('y', dist.Independent(dist.Normal(field, sigma_e/jnp.sqrt(gal_per_arcmin2 * pix_area)), 2))
+    if with_noise == True:
+      # Adding "observational noise"
+      x = numpyro.sample('y', dist.Independent(dist.Normal(field, sigma_e/jnp.sqrt(gal_per_arcmin2 * pix_area)), 2))
+    else: 
+      x = numpyro.deterministic('y', field)
     
     return x

@@ -8,7 +8,7 @@ setup(
   packages=find_packages(),
   package_dir={'sbids':'sbids'}, 
   package_data={
-      'sbids': ['data/*.csv', 'data/*.npy'],
+      'sbids': ['data/*.csv', 'data/*.npy', 'data/*.pkl'],
    },
   include_package_data=True,
   install_requires=[

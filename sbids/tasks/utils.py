@@ -1,15 +1,21 @@
 from numpyro.handlers import seed, trace, condition
 import jax
+from functools import partial
 
-def get_samples_and_scores(model, key, batch_size=64, score_type='density', thetas=None):
+def get_samples_and_scores(model, key, batch_size=64, score_type=None, thetas=None, with_noise=True):
     """
     Handling function sampling and computing the score from the model.
 
-    model: a numpyro model
-    key: jax random seed
-    batch_size: size of the batch to sample
-    score_type: 'density' for nabla_theta p(theta | y, z) or 
-        'conditional' for nabla_theta p(y | z, theta), default is 'density'.
+    model: a numpyro model.
+    key: jax random seed.
+    batch_size: size of the batch to sample.
+    score_type: 'density' for nabla_theta log p(theta | y, z) or 
+                'conditional' for nabla_theta log p(y | z, theta), default is 'density'.
+    thetas: thetas used to sample simulations or 
+            'None' sample thetas from the model, default is 'None'.
+    with_noise: add noise in simulations, default is 'True'. 
+                note: if no noise the score is only nabla_theta log p(theta, z)
+                      and log_prob log p(theta, z)
         
     returns: (log_prob, sample), score
     """
@@ -18,18 +24,23 @@ def get_samples_and_scores(model, key, batch_size=64, score_type='density', thet
         cond_model = seed(cond_model, key)
         model_trace = trace(cond_model).get_trace()
 
-        logp = 0 
-        for i in range(len(model_trace) - 1): 
-          key, val = list(model_trace.items())[i]
-          
-          if not (key == 'theta' and score_type == 'conditional'):
-            logp += val['fn'].log_prob(val['value']).sum()
-        
-        logp += model_trace['y']['fn'].log_prob(jax.lax.stop_gradient(model_trace['y']['value'])).sum()
-
         sample = {'theta': model_trace['theta']['value'],
                   'y': model_trace['y']['value']}
 
+        if score_type == 'density':
+          logp = model_trace['theta']['fn'].log_prob(model_trace['theta']['value']).sum()
+        elif score_type == 'conditional':
+          logp = 0 
+
+        if with_noise == True:
+            logp += model_trace['y']['fn'].log_prob(jax.lax.stop_gradient(model_trace['y']['value'])).sum()
+        
+        del model_trace['theta']
+        del model_trace['y']
+
+        for i in range(len(model_trace) - 1): 
+          key, val = list(model_trace.items())[i]
+          logp += val['fn'].log_prob(val['value']).sum()
 
         return logp, sample
     
