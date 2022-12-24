@@ -190,7 +190,7 @@ class LensingLogNormalDataset(tfds.core.GeneratorBasedBuilder):
       FILE = " "
 
   
-    bs = 100
+    bs = 50
     if self.builder_config.proposal == True:
         a_file = open(DATA_DIR / FILE, "rb")
         parameters = pickle.load(a_file)
