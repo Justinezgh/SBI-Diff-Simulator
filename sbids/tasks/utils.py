@@ -17,7 +17,7 @@ def get_samples_and_scores(model, key, batch_size=64, score_type=None, thetas=No
                 note: if no noise the score is only nabla_theta log p(theta, z)
                       and log_prob log p(theta, z)
         
-    returns: (log_prob, sample), score
+    returns: (log_prob, sample), score9287
     """
     def log_prob_fn(theta, key):
         cond_model = condition(model, {'theta': theta})
@@ -38,7 +38,7 @@ def get_samples_and_scores(model, key, batch_size=64, score_type=None, thetas=No
         del model_trace['theta']
         del model_trace['y']
 
-        for i in range(len(model_trace) - 1): 
+        for i in range(len(model_trace)): 
           key, val = list(model_trace.items())[i]
           logp += val['fn'].log_prob(val['value']).sum()
 
