@@ -19,6 +19,7 @@ setup(
     'dm-haiku==0.0.5',
     'jaxopt>=0.2',
     'numpyro==0.10.1',
-    'jax-cosmo>=0.1.0'
+    'jax-cosmo>=0.1.0', 
+    'typing_extensions>=4.4.0'
   ],
 )
