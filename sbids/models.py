@@ -150,3 +150,30 @@ class ConditionalRealNVP(hk.Module):
               bijector=chain)
 
         return nvp
+
+
+class MLP(hk.Module):
+    """This is a NN that defines the dynamics of the ODE."""
+    def __init__(
+      self,
+      *args,
+      layers=[128, 128],
+      activation=jax.nn.silu,
+      **kwargs
+    ):
+        """
+        Args:
+        layers, list of hidden layers
+        activation, activation function for hidden layers
+        """
+        self.layers = layers
+        self.activation = activation
+        super(MLP, self).__init__(*args, **kwargs)
+
+    def __call__(self, x):
+        net = x
+        for i, layer_size in enumerate(self.layers):
+            net = self.activation(
+              hk.Linear(layer_size, name='layer%d' % i)(net)
+            )
+        return net.squeeze()
