@@ -119,7 +119,7 @@ class train_model():
             perm = rng.permutation(dataset_size)
             for i in range(dataset_size // batch_size):
                 batch_idx = perm[i * batch_size: (i + 1) * batch_size]
-                yield x[batch_idx], theta[batch_idx], score[batch_idx]
+                yield theta[batch_idx], x[batch_idx], score[batch_idx]
 
     @partial(jax.jit, static_argnums=(0,))
     def update(
