@@ -70,7 +70,7 @@ class train_model():
         self.compressor = compressor
         self.params_compressor = params_compressor
 
-        if self.compressor is None:
+        if self.compressor == None:
             self.loss = self.loss_sbi
         else:
             self.loss = self.loss_sbi_with_compressor
@@ -97,13 +97,13 @@ class train_model():
             if self.task_name == 'lotka_volterra':
                 x = x.reshape([-1, 20], order='F')
 
-        if jnp.isnan(score).any() is True:
+        if jnp.isnan(score).any() == True:
             idx = jnp.where(jnp.isnan(score))[0]
             x = jnp.delete(x, idx, axis=0)
             theta = jnp.delete(theta, idx, axis=0)
             score = jnp.delete(score, idx, axis=0)
 
-        return (theta, x, score)
+        return theta, x, score
 
     def data_stream(self, key, batch_size, dataset):
 
@@ -162,19 +162,20 @@ class train_model():
         numpy_key
     ):
 
-        dataset = self.get_batch(jax_key, nb_simulations)
-        batch_loss = []
-        opt_state = self.optimizer.init(model_params)
+        params = model_params
+        opt_state = self.optimizer.init(params)
 
+        dataset = self.get_batch(jax_key, nb_simulations)
         batch_generator = self.data_stream(numpy_key, batch_size, dataset)
 
+        batch_loss = []
         for epoch in tqdm(range(epoch)):
             for step in range(nb_simulations // batch_size):
 
                 theta, x, score = next(batch_generator)
 
-                l, model_params, opt_state = self.update(
-                    model_params,
+                l, params, opt_state = self.update(
+                    params,
                     opt_state,
                     theta,
                     x,
@@ -189,4 +190,4 @@ class train_model():
                     print('NaN in loss')
                     break
 
-        return batch_loss, opt_state, model_params
+        return batch_loss, opt_state, params
