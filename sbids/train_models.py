@@ -79,9 +79,9 @@ class train_model():
 
         if self.task_name == 'two_moons':
             two_moons = get_two_moons(sigma=0.01)
-            x = two_moons.sample(nb_simulations, seed=key)
-            score = jax.vmap(jax.grad(two_moons.log_prob))(x)
-            theta = jnp.ones(x.shape) * 0.01
+            theta = two_moons.sample(nb_simulations, seed=key)
+            score = jax.vmap(jax.grad(two_moons.log_prob))(theta)
+            x = jnp.ones(theta.shape) * 0.01
 
         else:
             (_, sample), score = get_samples_and_scores(
