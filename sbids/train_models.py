@@ -78,7 +78,7 @@ class train_model():
     def get_batch(self, key, nb_simulations):
 
         if self.task_name == 'two_moons':
-            two_moons = get_two_moons(sigma=0.01)
+            two_moons = get_two_moons(sigma=0.01, normalized=True)
             theta = two_moons.sample(nb_simulations, seed=key)
             score = jax.vmap(jax.grad(two_moons.log_prob))(theta)
             x = jnp.ones(theta.shape) * 0.01
