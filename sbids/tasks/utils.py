@@ -27,8 +27,8 @@ def get_samples_and_scores(
                 and log_prob log p(theta, z)
     """
     def log_prob_fn(theta, key):
-        cond_model = condition(model, {'theta': theta})
-        cond_model = seed(cond_model, key)
+        cond_model = seed(model, key)
+        cond_model = condition(cond_model, {'theta': theta})
         model_trace = trace(cond_model).get_trace()
 
         sample = {'theta': model_trace['theta']['value'],
